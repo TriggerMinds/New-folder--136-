@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -75,6 +77,12 @@ async def sync_country_packs_to_database(session: AsyncSession) -> SourceSyncRes
                     existing_src.poll_interval_minutes = src_def.poll_interval_minutes
                     existing_src.connector_config = connector_config
                     existing_src.country_pack_version = SYNC_VERSION
+                    existing_src.present_in_country_pack = True
+                    existing_src.last_synced_at = datetime.now(timezone.utc)
+                    existing_src.lifecycle_status = "active" if existing_src.enabled else "inactive"
+                    d_reason = getattr(src_def, 'disabled_reason', None)
+                    if d_reason:
+                        existing_src.disabled_reason = d_reason
                     session.add(existing_src)
                     result.updated += 1
                 else:
@@ -106,11 +114,38 @@ async def sync_country_packs_to_database(session: AsyncSession) -> SourceSyncRes
                 session.add(src)
                 result.created += 1
 
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc)
+
     for ext_id, existing_src in existing_sources.items():
-        if ext_id not in synced_external_ids and existing_src.enabled:
+        existing_src.present_in_country_pack = ext_id in synced_external_ids
+        existing_src.last_synced_at = now
+
+        if ext_id in synced_external_ids:
+            if existing_src.enabled:
+                existing_src.lifecycle_status = "active"
+            else:
+                existing_src.lifecycle_status = "inactive"
+        else:
             existing_src.enabled = False
-            session.add(existing_src)
-            result.disabled += 1
+            existing_src.present_in_country_pack = False
+            existing_src.lifecycle_status = "historical"
+
+            if ext_id not in synced_external_ids and existing_src.enabled:
+                result.disabled += 1
+
+    for new_ext_id in synced_external_ids:
+        if new_ext_id in existing_sources:
+            src = existing_sources[new_ext_id]
+            src.present_in_country_pack = True
+            src.last_synced_at = now
+            if src.enabled:
+                src.lifecycle_status = "active"
+            else:
+                disabled_reason = getattr(next((s for pack in active_packs if pack.sources for s in pack.sources.sources if s.id == new_ext_id), None), 'disabled_reason', None)
+                if disabled_reason:
+                    src.disabled_reason = disabled_reason
+                src.lifecycle_status = "inactive"
 
     await session.flush()
     return result

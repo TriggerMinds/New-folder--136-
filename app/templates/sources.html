@@ -1,11 +1,23 @@
 {% extends "base.html" %}
 {% block content %}
 <h1>Bronnen</h1>
-<p class="subtitle">Alle gesynchroniseerde bronnen</p>
+<p class="subtitle">Actuele country pack-bronnen</p>
+
+<div class="meta" style="margin-bottom:1rem;">
+    <span class="tag ai-enriched">{{ active_count }} actief</span>
+    <span class="tag ai-pending">{{ inactive_count }} inactief</span>
+    <span class="tag auth-confirmed_fabricated">{{ historical_count }} historisch</span>
+</div>
 
 <form method="post" action="/sources/run" style="margin-bottom:1rem;">
-    <button type="submit" class="btn">Alle bronnen uitvoeren</button>
+    <button type="submit" class="btn">Alle actieve bronnen uitvoeren</button>
 </form>
+
+{% if historical_view %}
+<p><a href="/sources">← Actuele bronnen tonen</a></p>
+{% else %}
+<p><a href="/sources?view=historical">→ Historische bronnen tonen ({{ historical_count }})</a></p>
+{% endif %}
 
 <table>
     <thead>
@@ -13,8 +25,9 @@
             <th>ID</th>
             <th>Naam</th>
             <th>Land</th>
-            <th>Type</th>
-            <th>Ingeschakeld</th>
+            <th>Laag</th>
+            <th>Categorie</th>
+            <th>Lifecycle</th>
             <th>Laatste controle</th>
             <th>Laatste succes</th>
             <th>Fouten</th>
@@ -27,10 +40,18 @@
             <td>{{ src.external_id }}</td>
             <td>{{ src.name }}</td>
             <td>{{ src.country_code }}</td>
-            <td>{{ src.source_type }}</td>
-            <td>{{ 'Ja' if src.enabled else 'Nee' }}</td>
-            <td>{{ src.last_checked_at or '—' }}</td>
-            <td>{{ src.last_success_at or '—' }}</td>
+            <td><span class="tag">{{ src.source_layer }}</span></td>
+            <td><span class="tag">{{ src.source_category }}</span></td>
+            <td>
+                <span class="tag {% if src.lifecycle_status == 'active' %}ai-enriched{% elif src.lifecycle_status == 'inactive' %}ai-pending{% else %}auth-confirmed_fabricated{% endif %}">
+                    {{ src.lifecycle_status }}
+                </span>
+                {% if src.disabled_reason %}
+                    <span title="{{ src.disabled_reason }}">ℹ️</span>
+                {% endif %}
+            </td>
+            <td>{{ src.last_checked_at|string|truncate(19) if src.last_checked_at else '—' }}</td>
+            <td>{{ src.last_success_at|string|truncate(19) if src.last_success_at else '—' }}</td>
             <td>
                 {% if src.last_error %}
                     <span class="tag auth-confirmed_fabricated">{{ src.consecutive_failures }}x</span>
@@ -39,9 +60,13 @@
                 {% endif %}
             </td>
             <td>
-                <form method="post" action="/sources/{{ src.id }}/run" style="display:inline;">
-                    <button type="submit" class="btn-small">Run</button>
-                </form>
+                {% if src.enabled and src.lifecycle_status == 'active' and src.present_in_country_pack %}
+                    <form method="post" action="/sources/{{ src.id }}/run" style="display:inline;">
+                        <button type="submit" class="btn-small">Run</button>
+                    </form>
+                {% else %}
+                    <span class="tag ai-pending">—</span>
+                {% endif %}
             </td>
         </tr>
     {% endfor %}

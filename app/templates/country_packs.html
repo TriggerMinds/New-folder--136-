@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <h1>Country Packs</h1>
-<p class="subtitle">Alle 27 EU-landen — status en validatie</p>
+<p class="subtitle">Alle 27 EU-landen — synchronisatiestatus</p>
 
 <form method="post" action="/country-packs/sync" style="margin-bottom:1rem;">
     <button type="submit" class="btn">Sync bronnen naar database</button>
@@ -12,11 +12,11 @@
         <tr>
             <th>Code</th>
             <th>Status</th>
-            <th>Talen</th>
-            <th>Termen</th>
-            <th>Entiteiten</th>
-            <th>Bronnen</th>
-            <th>Fouten</th>
+            <th>Actuele sources</th>
+            <th>Actief</th>
+            <th>Primary raw</th>
+            <th>Reference only</th>
+            <th>Historisch in DB</th>
         </tr>
     </thead>
     <tbody>
@@ -24,17 +24,11 @@
         <tr>
             <td><strong>{{ pack.country_code }}</strong></td>
             <td><span class="tag {{ 'ai-enriched' if pack.status == 'active' else 'ai-pending' }}">{{ pack.status }}</span></td>
-            <td>{{ pack.languages | length }}</td>
-            <td>{{ pack.term_count }}</td>
-            <td>{{ pack.entity_count }}</td>
             <td>{{ pack.source_count }}</td>
-            <td>
-                {% if pack.errors %}
-                    <ul>{% for e in pack.errors %}<li>{{ e }}</li>{% endfor %}</ul>
-                {% else %}
-                    —
-                {% endif %}
-            </td>
+            <td>{{ pack.active_count }}</td>
+            <td>{{ pack.primary_raw_count }}</td>
+            <td>{{ pack.reference_only_count }}</td>
+            <td>{{ pack.historical_count }}</td>
         </tr>
     {% endfor %}
     </tbody>

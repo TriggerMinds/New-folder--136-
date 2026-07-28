@@ -3,6 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, func
 
 from app.api.dependencies import get_db
 from app.country_packs.loader import load_all_country_packs
@@ -11,20 +12,44 @@ from app.repositories.sources import SourceRepository
 from app.repositories.source_runs import SourceRunRepository
 from app.repositories.observations import ObservationRepository
 from app.repositories.audit import AuditRepository
+from app.repositories.source_signals import SourceSignalRepository
+from app.repositories.artifact_discoveries import ArtifactDiscoveryRepository
 from app.schemas.claims import ClaimResponse
 from app.schemas.sources import SourceResponse
 from app.schemas.source_runs import SourceRunResponse
+from app.schemas.source_signals import SourceSignalResponse
 from app.services.source_runner import run_source, run_enabled_sources
 from app.services.source_sync import sync_country_packs_to_database
-from app.repositories.source_signals import SourceSignalRepository
-from app.schemas.source_signals import SourceSignalResponse
-from app.repositories.artifact_discoveries import ArtifactDiscoveryRepository
+from app.database.models.source import Source
 
 router = APIRouter(tags=["web"])
 
 
 @router.get("/", response_class=HTMLResponse)
-async def raw_feed(
+async def artifact_feed(
+    request: Request,
+    limit: int = Query(default=200, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
+    artifact_type: str | None = Query(default=None),
+    host: str | None = Query(default=None),
+    db: AsyncSession = Depends(get_db),
+):
+    repo = ArtifactDiscoveryRepository(db)
+    discoveries = await repo.list_discoveries(limit=limit, offset=offset, artifact_type=artifact_type, host=host)
+    total = await repo.count_discoveries()
+    src_count = await db.execute(select(func.count(Source.id)).where(Source.lifecycle_status == "active", Source.source_layer == "primary_raw"))
+    sources_active = src_count.scalar() or 0
+    templates = request.app.state.templates
+    return templates.TemplateResponse(request, "artifacts.html", {
+        "discoveries": discoveries, "total": total,
+        "limit": limit, "offset": offset,
+        "artifact_type": artifact_type or "", "host": host or "",
+        "metadata_only": total, "sources_active": sources_active,
+    })
+
+
+@router.get("/claims", response_class=HTMLResponse)
+async def claim_feed(
     request: Request,
     limit: int = Query(default=50, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
@@ -83,19 +108,35 @@ async def health_page(request: Request):
 
 
 @router.get("/country-packs", response_class=HTMLResponse)
-async def country_packs_page(request: Request):
+async def country_packs_page(request: Request, db: AsyncSession = Depends(get_db)):
     packs = load_all_country_packs()
+    historical_counts = {}
+    for p in packs:
+        cnt = await db.execute(select(func.count(Source.id)).where(Source.country_code == p.country_code, Source.lifecycle_status == "historical"))
+        historical_counts[p.country_code] = cnt.scalar() or 0
+    active_counts = {}
+    for p in packs:
+        cnt = await db.execute(select(func.count(Source.id)).where(Source.country_code == p.country_code, Source.lifecycle_status == "active"))
+        active_counts[p.country_code] = cnt.scalar() or 0
+    primary_raw_counts = {}
+    for p in packs:
+        cnt = await db.execute(select(func.count(Source.id)).where(Source.country_code == p.country_code, Source.source_layer == "primary_raw", Source.lifecycle_status == "active"))
+        primary_raw_counts[p.country_code] = cnt.scalar() or 0
+    reference_counts = {}
+    for p in packs:
+        cnt = await db.execute(select(func.count(Source.id)).where(Source.country_code == p.country_code, Source.source_layer == "reference_only", Source.present_in_country_pack == True))
+        reference_counts[p.country_code] = cnt.scalar() or 0
     templates = request.app.state.templates
     pack_data = []
     for p in packs:
         pack_data.append({
             "country_code": p.country_code,
             "status": p.status,
-            "languages": [l.model_dump() for l in (p.languages.languages if p.languages else [])],
-            "term_count": len(p.leak_terms.terms) if p.leak_terms else 0,
-            "entity_count": len(p.entities.entities) if p.entities else 0,
             "source_count": len(p.sources.sources) if p.sources else 0,
-            "errors": p.errors,
+            "active_count": active_counts.get(p.country_code, 0),
+            "primary_raw_count": primary_raw_counts.get(p.country_code, 0),
+            "reference_only_count": reference_counts.get(p.country_code, 0),
+            "historical_count": historical_counts.get(p.country_code, 0),
         })
     return templates.TemplateResponse(request, "country_packs.html", {"packs": pack_data})
 
@@ -108,18 +149,39 @@ async def sync_packs_web(db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/sources", response_class=HTMLResponse)
-async def sources_page(request: Request, db: AsyncSession = Depends(get_db)):
+async def sources_page(
+    request: Request,
+    view: str | None = Query(default=None),
+    db: AsyncSession = Depends(get_db),
+):
     repo = SourceRepository(db)
-    sources = await repo.list_sources(limit=500, offset=0)
+    historical_view = view == "historical"
+    all_sources = await repo.list_sources(limit=500, offset=0)
+    active_count = sum(1 for s in all_sources if s.lifecycle_status == "active" and s.present_in_country_pack)
+    inactive_count = sum(1 for s in all_sources if s.lifecycle_status == "inactive" and s.present_in_country_pack)
+    historical_count = sum(1 for s in all_sources if s.lifecycle_status == "historical")
+    if historical_view:
+        sources = [s for s in all_sources if s.lifecycle_status == "historical"]
+    else:
+        sources = [s for s in all_sources if s.present_in_country_pack]
     items = [SourceResponse.model_validate(s) for s in sources]
     templates = request.app.state.templates
-    return templates.TemplateResponse(request, "sources.html", {"sources": items})
+    return templates.TemplateResponse(request, "sources.html", {
+        "sources": items, "historical_view": historical_view,
+        "active_count": active_count, "inactive_count": inactive_count,
+        "historical_count": historical_count,
+    })
 
 
 @router.post("/sources/{source_id}/run", response_class=RedirectResponse)
 async def run_source_web(source_id: str, db: AsyncSession = Depends(get_db)):
     try:
         uid = UUID(source_id)
+        from sqlalchemy import select as _select
+        result = await db.execute(_select(Source).where(Source.id == uid))
+        src = result.scalar_one_or_none()
+        if src and not (src.enabled and src.lifecycle_status == "active" and src.present_in_country_pack):
+            return HTMLResponse(content="<h1>409</h1><p>Bron is niet actief</p>", status_code=409)
         await run_source(uid, db)
         await db.commit()
     except Exception:
@@ -128,12 +190,14 @@ async def run_source_web(source_id: str, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/sources/run", response_class=RedirectResponse)
-async def run_all_sources_web(
-    country_code: str | None = Form(default=None),
-    source_type: str | None = Form(default=None),
-    db: AsyncSession = Depends(get_db),
-):
-    await run_enabled_sources(db, country_code=country_code, source_type=source_type)
+async def run_all_active_sources_web(db: AsyncSession = Depends(get_db)):
+    stmt = select(Source).where(Source.enabled.is_(True), Source.lifecycle_status == "active", Source.present_in_country_pack.is_(True))
+    sources = await db.execute(stmt)
+    for src in sources.scalars().all():
+        try:
+            await run_source(src.id, db)
+        except Exception:
+            pass
     await db.commit()
     return RedirectResponse(url="/source-runs", status_code=303)
 
@@ -164,22 +228,3 @@ async def source_signals_page(
     items = [SourceSignalResponse.model_validate(s) for s in signals]
     templates = request.app.state.templates
     return templates.TemplateResponse(request, "source_signals.html", {"signals": items})
-
-
-@router.get("/artifacts", response_class=HTMLResponse)
-async def artifacts_page(
-    request: Request,
-    limit: int = Query(default=200, ge=1, le=500),
-    offset: int = Query(default=0, ge=0),
-    artifact_type: str | None = Query(default=None),
-    db: AsyncSession = Depends(get_db),
-):
-    repo = ArtifactDiscoveryRepository(db)
-    discoveries = await repo.list_discoveries(limit=limit, offset=offset, artifact_type=artifact_type)
-    total = await repo.count_discoveries()
-    templates = request.app.state.templates
-    return templates.TemplateResponse(request, "artifacts.html", {
-        "discoveries": discoveries, "total": total,
-        "limit": limit, "offset": offset,
-        "artifact_type": artifact_type or "",
-    })

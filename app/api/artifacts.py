@@ -16,10 +16,7 @@ async def list_artifacts(
     db: AsyncSession = Depends(get_db),
 ):
     repo = ArtifactDiscoveryRepository(db)
-    discoveries = await repo.list_discoveries(
-        limit=limit, offset=offset,
-        artifact_type=artifact_type, host=host,
-    )
+    discoveries = await repo.list_discoveries(limit=limit, offset=offset, artifact_type=artifact_type, host=host)
     total = await repo.count_discoveries()
     return {
         "items": [
