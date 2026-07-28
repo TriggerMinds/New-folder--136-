@@ -86,6 +86,9 @@ class InternetArchiveAPIConnector(BaseConnector):
                                 "source_date_precision": "exact_datetime",
                                 "source_date_confidence": "authoritative",
                                 "source_created_at": publicdate,
+                                "upload_date_method": "archive_metadata",
+                                "upload_date_confidence": "authoritative",
+                                "upload_date_raw": addeddate or publicdate or "",
                             },
                         )
                         result.items.append(item)

@@ -91,6 +91,9 @@ class GitHubAPIConnector(BaseConnector):
                                 "source_created_at": created,
                                 "source_modified_at": updated,
                                 "source_pushed_at": pushed,
+                                "upload_date_method": "repository_metadata",
+                                "upload_date_confidence": "authoritative",
+                                "upload_date_raw": created or "",
                             },
                         )
                         result.items.append(item)
