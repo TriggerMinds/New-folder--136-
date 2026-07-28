@@ -1,0 +1,31 @@
+Method,Path,HTTP Status,Content-Type,JSON Valid,Status,Notes
+GET,/,200,text/html; charset=utf-8,N/A,working,Raw Artifact Feed template renders correctly with 408 items.
+GET,/artifacts,200,text/html; charset=utf-8,N/A,working,Alias for artifact feed.
+GET,/sources,200,text/html; charset=utf-8,N/A,working,Lists active and inactive sources for active country packs.
+GET,/sources?view=historical,200,text/html; charset=utf-8,N/A,working,Lists 13 historical sources.
+GET,/source-runs,200,text/html; charset=utf-8,N/A,working,Lists current source runs.
+GET,/source-runs?view=historical,200,text/html; charset=utf-8,N/A,working,Lists historical source runs.
+GET,/source-runs?view=all,200,text/html; charset=utf-8,N/A,working,Lists all source runs.
+GET,/country-packs,200,text/html; charset=utf-8,N/A,working,Shows pack stats for 27 EU country packs.
+GET,/claims,200,text/html; charset=utf-8,N/A,partially_working,Legacy claims view; separate from raw artifacts system.
+GET,/source-signals,200,text/html; charset=utf-8,N/A,working,Displays source signals feed.
+GET,/distributions,200,text/html; charset=utf-8,N/A,working,Lists 408 distribution observations.
+GET,/references,200,text/html; charset=utf-8,N/A,working,Empty state rendered correctly (0 references).
+GET,/system/health,200,text/html; charset=utf-8,N/A,working,HTML container that fetches /health client-side.
+GET,/docs,200,text/html; charset=utf-8,N/A,working,Swagger UI documentation.
+GET,/openapi.json,200,application/json,true,working,OpenAPI schema definitions.
+GET,/artifacts/{artifact_id},200,text/html; charset=utf-8,N/A,partially_working,Renders detail page but references/acquisitions are silenced via hasattr check.
+GET,/api/artifacts,200,application/json,true,working,Returns paginated discoveries list.
+GET,/api/artifacts/{artifact_id},404,application/json,true,missing,API endpoint for single artifact detail is not registered.
+GET,/api/artifacts/{artifact_id}/distributions,404,application/json,true,missing,API endpoint for artifact distributions is missing.
+GET,/api/artifacts/{artifact_id}/references,404,application/json,true,missing,API endpoint for artifact references is missing.
+GET,/api/artifacts/{artifact_id}/download-status,404,application/json,true,missing,API endpoint for download status is missing.
+POST,/api/artifacts/{artifact_id}/download,404,application/json,true,missing,API endpoint to trigger download / record blocked acquisition is missing.
+POST,/artifacts/{artifact_id}/download,404,application/json,true,missing,Web POST action for download trigger is missing.
+GET,/api/distribution-observations,404,application/json,true,missing,API list for distribution observations is missing.
+GET,/api/reference-observations,404,application/json,true,missing,API list for reference observations is missing.
+GET,/api/sources,200,application/json,true,working,Lists configured sources.
+GET,/api/sources?include_historical=true,200,application/json,true,working,Lists sources including historical ones.
+GET,/api/sources/summary,200,application/json,true,working,Returns count summary per category/status.
+GET,/api/sources/{source_id}/stats,200,application/json,true,partially_working,Uses in-memory list pagination cap (limit 999) to compute total.
+GET,/api/dashboard/summary,404,application/json,true,missing,Dashboard summary API endpoint is not registered in FastAPI router.

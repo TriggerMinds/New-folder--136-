@@ -66,6 +66,9 @@ async def get_source(source_id: UUID, db: AsyncSession = Depends(get_db)):
 
 @router.get("/{source_id}/stats")
 async def source_stats(source_id: UUID, db: AsyncSession = Depends(get_db)):
+    from app.repositories.artifact_discoveries import ArtifactDiscoveryRepository
+    from app.repositories.source_runs import SourceRunRepository
+    from app.repositories.sources import SourceRepository
     repo = SourceRepository(db)
     source = await repo.get_source(source_id)
     if source is None:
@@ -73,11 +76,10 @@ async def source_stats(source_id: UUID, db: AsyncSession = Depends(get_db)):
     run_repo = SourceRunRepository(db)
     art_repo = ArtifactDiscoveryRepository(db)
     runs_total = await run_repo.count_runs(source_id=source_id)
-    runs = await run_repo.list_runs(source_id=source_id, limit=999, offset=0)
-    runs_success = sum(1 for r in runs if r.success)
-    runs_failed = sum(1 for r in runs if not r.success)
-    artifacts = await art_repo.list_discoveries(limit=999, offset=0)
-    artifacts_total = sum(1 for a in artifacts if str(a.source_id) == str(source_id))
+    runs_all = await run_repo.list_runs(source_id=source_id, limit=999999, offset=0)
+    runs_success = sum(1 for r in runs_all if r.success)
+    runs_failed = sum(1 for r in runs_all if not r.success)
+    artifacts_total = await art_repo.count_artifacts_for_source(source_id)
     return {
         "runs_total": runs_total,
         "runs_success": runs_success,

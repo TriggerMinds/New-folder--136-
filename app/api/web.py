@@ -65,12 +65,8 @@ async def artifact_detail_page(request: Request, artifact_id: str, db: AsyncSess
         return HTMLResponse("<h1>404</h1>", status_code=404)
     dist_repo = DistributionObservationRepository(db)
     dists = await dist_repo.list_for_artifact(uid)
-    refs = []
-    if hasattr(repo, "list_references"):
-        refs = await repo.list_references(uid)
-    acquisitions = []
-    if hasattr(repo, "list_acquisitions"):
-        acquisitions = await repo.list_acquisitions(uid)
+    refs = await repo.list_references(uid, limit=100, offset=0)
+    acquisitions = await repo.list_acquisitions(uid, limit=100, offset=0)
     templates = request.app.state.templates
     return templates.TemplateResponse(request, "artifact_detail.html", {
         "d": d, "distributions": dists, "references": refs, "acquisitions": acquisitions,

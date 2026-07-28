@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     country_pack_directory: str = Field("app/country_packs", alias="COUNTRY_PACK_DIRECTORY")
     connector_concurrency: int = Field(4, alias="CONNECTOR_CONCURRENCY")
     scheduler_timezone: str = Field("UTC", alias="SCHEDULER_TIMEZONE")
+    download_artifacts: bool = Field(False, alias="DOWNLOAD_ARTIFACTS")
 
 
 settings = Settings()

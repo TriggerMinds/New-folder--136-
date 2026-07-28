@@ -27,6 +27,9 @@ from app.scheduler.scheduler import start_scheduler, stop_scheduler
 from app.utils.template_filters import register_template_filters
 from app.api.source_signals import router as source_signals_router
 from app.api.artifacts import router as artifacts_router
+from app.api.dashboard import router as dashboard_router
+from app.api.distributions import router as distributions_router
+from app.api.references import router as references_router
 
 
 @asynccontextmanager
@@ -63,5 +66,8 @@ app.include_router(web_router)
 app.include_router(country_packs_router)
 app.include_router(source_runs_router)
 app.include_router(artifacts_router)
+app.include_router(dashboard_router)
+app.include_router(distributions_router)
+app.include_router(references_router)
 app.include_router(source_signals_router)
 app.include_router(scheduler_router)

@@ -3,98 +3,107 @@ import unicodedata
 
 from app.country_packs.loader import load_country_pack
 
-EU_NAMES = {
-    "european commission", "europese commissie", "ec",
-    "european parliament", "europees parlement", "ep",
-    "council of the european union", "raad van de europese unie",
-    "european council", "europese raad",
-    "court of justice of the european union", "hof van justitie van de europese unie",
-    "european central bank", "europese centrale bank", "ecb",
-    "european court of auditors", "europese rekenkamer",
-    "european external action service", "eeas",
-    "eu council", "eu commission",
-    "eu parliament", "europol",
-    "eurojust", "frontex",
-    "european data protection supervisor", "edps",
-    "european investment bank", "eib",
-    "european ombudsman",
+EU_ENTITIES = [
+    ("european commission", "European Commission"),
+    ("europese commissie", "European Commission"),
+    ("european parliament", "European Parliament"),
+    ("europees parlement", "European Parliament"),
+    ("european council", "European Council"),
+    ("europese raad", "European Council"),
+    ("european central bank", "European Central Bank"),
+    ("europese centrale bank", "European Central Bank"),
+    ("court of justice of the european union", "Court of Justice of the European Union"),
+    ("european court of auditors", "European Court of Auditors"),
+    ("europol", "Europol"),
+    ("eurojust", "Eurojust"),
+    ("frontex", "Frontex"),
+    ("european external action service", "European External Action Service"),
+]
+
+COUNTRY_MAP = [
+    (re.compile(r"\bnetherlands\b", re.I), "NL"),
+    (re.compile(r"\bnederland\b", re.I), "NL"),
+    (re.compile(r"\bgermany\b", re.I), "DE"),
+    (re.compile(r"\bduitsland\b", re.I), "DE"),
+    (re.compile(r"\bdeutschland\b", re.I), "DE"),
+    (re.compile(r"\bfrance\b", re.I), "FR"),
+    (re.compile(r"\bfrankrijk\b", re.I), "FR"),
+    (re.compile(r"\bbelgium\b", re.I), "BE"),
+    (re.compile(r"\bbelgie\b", re.I), "BE"),
+    (re.compile(r"\baustria\b", re.I), "AT"),
+    (re.compile(r"\boostenrijk\b", re.I), "AT"),
+    (re.compile(r"\bsweden\b", re.I), "SE"),
+    (re.compile(r"\bzweden\b", re.I), "SE"),
+    (re.compile(r"\bdenmark\b", re.I), "DK"),
+    (re.compile(r"\bdenemarken\b", re.I), "DK"),
+    (re.compile(r"\bfinland\b", re.I), "FI"),
+    (re.compile(r"\bfinland\b", re.I), "FI"),
+    (re.compile(r"\bireland\b", re.I), "IE"),
+    (re.compile(r"\bierland\b", re.I), "IE"),
+    (re.compile(r"\bitaly\b", re.I), "IT"),
+    (re.compile(r"\bitalie\b", re.I), "IT"),
+    (re.compile(r"\bspain\b", re.I), "ES"),
+    (re.compile(r"\bspanje\b", re.I), "ES"),
+    (re.compile(r"\bportugal\b", re.I), "PT"),
+    (re.compile(r"\bgreece\b", re.I), "GR"),
+    (re.compile(r"\bgriekenland\b", re.I), "GR"),
+    (re.compile(r"\bpoland\b", re.I), "PL"),
+    (re.compile(r"\bpolen\b", re.I), "PL"),
+    (re.compile(r"\bmagyarorszag\b", re.I), "HU"),
+    (re.compile(r"\bhongarije\b", re.I), "HU"),
+    (re.compile(r"\bromania\b", re.I), "RO"),
+    (re.compile(r"\broemenie\b", re.I), "RO"),
+    (re.compile(r"\bbulgaria\b", re.I), "BG"),
+    (re.compile(r"\bbulgarije\b", re.I), "BG"),
+]
+
+HOST_COUNTRY = {
+    ".nl": "NL", ".de": "DE", ".fr": "FR", ".be": "BE", ".at": "AT",
+    ".se": "SE", ".dk": "DK", ".fi": "FI", ".ie": "IE", ".it": "IT",
+    ".es": "ES", ".pt": "PT", ".gr": "GR", ".pl": "PL", ".hu": "HU",
+    ".ro": "RO", ".bg": "BG", ".cz": "CZ", ".sk": "SK", ".si": "SI",
+    ".hr": "HR", ".lt": "LT", ".lv": "LV", ".ee": "EE", ".cy": "CY",
+    ".mt": "MT", ".lu": "LU",
 }
 
-COUNTRY_MAP = {
-    "netherlands": "NL", "nederland": "NL", "holland": "NL", "nl": "NL",
-    "germany": "DE", "duitsland": "DE", "deutschland": "DE", "de": "DE",
-    "france": "FR", "frankrijk": "FR", "fr": "FR",
-    "belgium": "BE", "belgie": "BE", "belgium": "BE",
-    "austria": "AT", "oostenrijk": "AT",
-    "sweden": "SE", "zweden": "SE",
-    "denmark": "DK", "denemarken": "DK",
-    "finland": "FI", "finland": "FI",
-    "ireland": "IE", "ierland": "IE",
-    "italy": "IT", "italie": "IT",
-    "spain": "ES", "spanje": "ES",
-    "portugal": "PT",
-    "greece": "GR", "griekenland": "GR",
-    "poland": "PL", "polen": "PL",
-    "czechia": "CZ", "tsjechie": "CZ",
-    "hungary": "HU", "hongarije": "HU",
-    "romania": "RO", "roemenie": "RO",
-    "bulgaria": "BG", "bulgarije": "BG",
-    "croatia": "HR", "kroatie": "HR",
-    "slovakia": "SK", "slowakije": "SK",
-    "slovenia": "SI", "slovenie": "SI",
-    "lithuania": "LT", "litouwen": "LT",
-    "latvia": "LV", "letland": "LV",
-    "estonia": "EE", "estland": "EE",
-    "cyprus": "CY", "cyprus": "CY",
-    "malta": "MT",
-    "luxembourg": "LU", "luxemburg": "LU",
-}
 
-
-def _normalize(text: str) -> str:
-    return unicodedata.normalize("NFKC", text).lower()
+def _norm(text: str) -> str:
+    return unicodedata.normalize("NFKC", text)
 
 
 def match_entities(title: str | None, description: str | None, filename: str | None, locator: str | None, country_code: str) -> tuple[list, list, list]:
     combined = ""
     for part in [title, description, filename, locator]:
         if part:
-            combined += _normalize(part) + " "
+            combined += _norm(part) + " "
 
-    countries = list(_find_countries(combined))
-    eu_entities = list(_find_eu_entities(combined))
-    national_entities = list(_find_national_entities(combined, country_code))
-    return countries, eu_entities, national_entities
+    countries = set()
+    for pattern, code in COUNTRY_MAP:
+        if pattern.search(combined):
+            countries.add(code)
+    if locator:
+        for suffix, code in HOST_COUNTRY.items():
+            if suffix in locator.lower():
+                countries.add(code)
 
+    eu_entities = set()
+    for search_name, canonical_name in EU_ENTITIES:
+        pat = re.compile(r"\b" + re.escape(search_name) + r"\b", re.I)
+        if pat.search(combined):
+            eu_entities.add(canonical_name)
 
-def _find_countries(text: str) -> set[str]:
-    result = set()
-    for name, code in COUNTRY_MAP.items():
-        if name in text:
-            result.add(code)
-    return result
-
-
-def _find_eu_entities(text: str) -> set[str]:
-    result = set()
-    for name in EU_NAMES:
-        if name in text:
-            result.add(name.title())
-    return result
-
-
-def _find_national_entities(text: str, country_code: str) -> set[str]:
-    result = set()
+    national_entities = set()
     try:
         pack = load_country_pack(country_code)
     except Exception:
-        return result
-    if not pack.entities:
-        return result
-    for entity in pack.entities.entities:
-        names = [entity.canonical_name.lower()] + [a.lower() for a in entity.aliases]
-        for n in names:
-            if n in text:
-                result.add(entity.canonical_name)
-                break
-    return result
+        pack = None
+    if pack and pack.entities:
+        for entity in pack.entities.entities:
+            names = [entity.canonical_name.lower()] + [a.lower() for a in entity.aliases]
+            for n in names:
+                pat = re.compile(r"\b" + re.escape(_norm(n)) + r"\b", re.I)
+                if pat.search(combined):
+                    national_entities.add(entity.canonical_name)
+                    break
+
+    return sorted(countries), sorted(eu_entities), sorted(national_entities)

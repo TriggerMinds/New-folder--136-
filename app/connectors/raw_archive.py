@@ -81,48 +81,6 @@ class RawArchiveConnector(BaseConnector):
                 break
         return items
 
-    def _parse_cryptome(self, content: str, base_url: str, max_items: int) -> list:
-        items = []
-        soup = BeautifulSoup(content, "lxml")
-        seen = set()
-        for a in soup.find_all("a"):
-            href = a.get("href", "")
-            if not href:
-                continue
-            ext = self._ext(href)
-            if ext not in ARCHIVE_EXTS:
-                continue
-            full = urljoin(base_url, href)
-            if full in seen:
-                continue
-            seen.add(full)
-            text = a.get_text(strip=True) or ""
-            parent = a.parent
-            desc = ""
-            if parent:
-                desc = parent.get_text(" ", strip=True)[:500]
-
-            parsed = urlparse(full)
-            filename = parsed.path.rstrip("/").split("/")[-1] if parsed.path else ""
-
-            item = DiscoveredItem(
-                source_external_id="",
-                url=full,
-                title=text or filename,
-                content=desc,
-                content_excerpt=desc[:300],
-                raw_metadata={
-                    "archive_mode": "cryptome",
-                    "filename": filename,
-                    "file_extension": ext,
-                    "page_url": base_url,
-                },
-            )
-            items.append(item)
-            if len(items) >= max_items:
-                break
-        return items
-
     def _parse_selectors(self, rows, base_url: str, max_items: int, link_sel: str, cfg: dict) -> list:
         items = []
         title_sel = cfg.get("title_selector", "")
@@ -152,12 +110,24 @@ class RawArchiveConnector(BaseConnector):
             items.append(item)
         return items
 
+    def _is_index_or_root(self, url: str, base_url: str) -> bool:
+        parsed = urlparse(url)
+        path = parsed.path.rstrip("/")
+        lower_path = path.lower()
+        if lower_path in ("", "/", "/index.html", "/index.htm", "/index.php", "/default.htm", "/default.html"):
+            return True
+        if lower_path.endswith(("/index.html", "/index.htm", "/index.php")):
+            return True
+        if url.rstrip("/") == base_url.rstrip("/"):
+            return True
+        return False
+
     def _parse_all_links(self, soup, base_url: str, max_items: int) -> list:
         items = []
         seen = set()
         for a in soup.find_all("a"):
             href = a.get("href", "")
-            if not href or href.startswith("#") or href.startswith("javascript:"):
+            if not href or href.startswith("#") or href.startswith("javascript:") or href.startswith("mailto:"):
                 continue
             full = urljoin(base_url, href)
             if full in seen:
@@ -166,11 +136,48 @@ class RawArchiveConnector(BaseConnector):
             ext = self._ext(full)
             if ext not in ARCHIVE_EXTS and ext:
                 continue
+            if self._is_index_or_root(full, base_url):
+                continue
             item = DiscoveredItem(
                 source_external_id="",
                 url=full,
                 title=a.get_text(strip=True) or full.rsplit("/", 1)[-1],
                 raw_metadata={"file_extension": ext},
+            )
+            items.append(item)
+            if len(items) >= max_items:
+                break
+        return items
+
+    def _parse_cryptome(self, content: str, base_url: str, max_items: int) -> list:
+        items = []
+        soup = BeautifulSoup(content, "lxml")
+        seen = set()
+        for a in soup.find_all("a"):
+            href = a.get("href", "")
+            if not href:
+                continue
+            ext = self._ext(href)
+            if ext not in ARCHIVE_EXTS:
+                continue
+            full = urljoin(base_url, href)
+            if full in seen:
+                continue
+            seen.add(full)
+            if self._is_index_or_root(full, base_url):
+                continue
+            text = a.get_text(strip=True) or ""
+            parent = a.parent
+            desc = ""
+            if parent:
+                desc = parent.get_text(" ", strip=True)[:500]
+            parsed = urlparse(full)
+            filename = parsed.path.rstrip("/").split("/")[-1] if parsed.path else ""
+            item = DiscoveredItem(
+                source_external_id="", url=full,
+                title=text or filename, content=desc,
+                content_excerpt=desc[:300],
+                raw_metadata={"archive_mode": "cryptome", "filename": filename, "file_extension": ext, "page_url": base_url},
             )
             items.append(item)
             if len(items) >= max_items:

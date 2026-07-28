@@ -1,0 +1,16 @@
+ID,Requirement Specification,Implemented,Registered,Route Reachable,Runtime Tested,Test Coverage,Status,Notes
+REQ-01,Raw Artifact Feed on /,Yes,Yes,Yes,Yes,Low,working,Homepage displays raw discoveries feed.
+REQ-02,Metadata-First Default (DOWNLOAD_ARTIFACTS=false),Yes,Yes,N/A,Yes,Medium,working,Download artifacts config setting enforced; no auto download.
+REQ-03,Cryptome Primary Raw Ingestion (~408 items),Yes,Yes,Yes,Yes,High,working,Connector extracts raw Cryptome items cleanly.
+REQ-04,Idempotent Deduplication (0 new on re-run),Yes,Yes,Yes,Yes,High,working,Re-running Cryptome yields 0 new discoveries and 0 new distributions.
+REQ-05,Source Lifecycle (active/inactive/historical),Yes,Yes,Yes,Yes,Medium,working,YAML synchronization preserves active/inactive/historical status.
+REQ-06,Artifact Detail Page (/artifacts/{id}),Yes,Yes,Yes,Yes,Low,partially_working,Renders artifact but fails to fetch references/acquisitions due to missing repo methods.
+REQ-07,Distribution Observations (/distributions),Yes,Yes,Yes,Yes,Low,working,Renders distributions list page.
+REQ-08,Reference Observations (/references),Yes,Yes,Yes,Yes,Low,working,Renders references page (0 items).
+REQ-09,Source Run Filters (view=current/historical/all),Yes,Yes,Yes,Yes,Low,working,Query parameters filter source runs correctly.
+REQ-10,Entity Matching & Dry Run Script,Yes,N/A,N/A,Yes,Low,broken,Contains severe substring matching bug matching 'DE' on 'orders' and 'EC' on 'docx'.
+REQ-11,API Dashboard Summary (/api/dashboard/summary),No,No,No,No,None,missing,Service function exists but API endpoint is not registered.
+REQ-12,API Artifact Detail & Distributions (/api/artifacts/{id}/*),No,No,No,No,None,missing,Endpoints missing from FastAPI artifacts router.
+REQ-13,Metadata Download Trigger & Audit Log,No,No,No,No,None,missing,No API or Web endpoint to trigger download or log blocked acquisition.
+REQ-14,Full-text & Multi-facet Search,No,No,No,No,None,missing,Only basic filtering by artifact_type and host; no text/hash search.
+REQ-15,Investigator Triage & Export Capabilities,No,No,No,No,None,missing,No saved searches watchlists CSV/JSONL exports or notes.
