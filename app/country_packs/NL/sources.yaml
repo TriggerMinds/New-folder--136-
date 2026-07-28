@@ -1,8 +1,34 @@
 country_code: NL
 status: active
 sources:
+  - id: nl_ddosecrets_mirror
+    name: Distributed Denial of Secrets
+    type: html
+    source_role: mirror
+    source_category: leak_archive
+    discovery_priority: primary
+    can_create_primary_claim: true
+    base_url: https://ddosecrets.com
+    poll_url: https://ddosecrets.com/wiki/Special:AllPages
+    languages:
+      - en
+    content_modes:
+      - links
+      - documents
+    access_method: html
+    connector_config:
+      item_selector: ul.mw-allpages-chunk a
+      max_items: 100
+    validation_notes: "Distributed Denial of Secrets - public leak archive mirror. All pages index contains document links. Last validated: 2026-07-28"
+    validated_at: "2026-07-28"
+    expected_content_types:
+      - documents
+      - archives
+    enabled: true
+    poll_interval_minutes: 60
+
   - id: nl_wikileaks_mirror
-    name: WikiLeaks Mirror
+    name: WikiLeaks - Recent Leaks
     type: html
     source_role: distribution
     source_category: leak_archive
@@ -14,21 +40,50 @@ sources:
       - en
     content_modes:
       - links
-      - documents
     access_method: html
     connector_config:
-      item_selector: div.content a[href]
+      item_selector: div#leaks ul li a[href]
       max_items: 100
+    validation_notes: "WikiLeaks public leaks listing page. List of published leak dossiers with links to source documents."
+    validated_at: "2026-07-28"
+    expected_content_types:
+      - documents
     enabled: true
     poll_interval_minutes: 60
+
+  - id: nl_github_eu_data
+    name: GitHub EU-related public repositories
+    type: html
+    source_role: signal
+    source_category: git_host
+    discovery_priority: primary
+    can_create_primary_claim: true
+    base_url: https://github.com
+    poll_url: https://github.com/search?o=desc&q=netherlands+leak+OR+dataleak+OR+eu+classified+OR+european+commission+leak&s=updated&type=repositories
+    languages:
+      - en
+    content_modes:
+      - links
+      - metadata
+    access_method: html
+    connector_config:
+      item_selector: div.d-flex h3 a
+      max_items: 100
+    validation_notes: "GitHub search for EU/Netherlands related leak repositories. Constantly updated list of public repos."
+    validated_at: "2026-07-28"
+    expected_content_types:
+      - repositories
+      - code
+    enabled: true
+    poll_interval_minutes: 30
 
   - id: nl_bbc_cyber_rss
     name: BBC Technology/Cybersecurity
     type: rss
-    source_role: signal
-    source_category: specialist_blog
-    discovery_priority: secondary
-    can_create_primary_claim: true
+    source_role: confirmation
+    source_category: mainstream_media
+    discovery_priority: low
+    can_create_primary_claim: false
     base_url: https://www.bbc.com
     poll_url: https://feeds.bbci.co.uk/news/technology/rss.xml
     languages:

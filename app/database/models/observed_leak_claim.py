@@ -100,6 +100,9 @@ class ObservedLeakClaim(Base):
         default=AIEnrichmentStatus.PENDING,
         server_default=AIEnrichmentStatus.PENDING.value,
     )
+    registration_status: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="active", server_default="active"
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=datetime.now
     )

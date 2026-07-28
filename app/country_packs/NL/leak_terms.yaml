@@ -1,23 +1,36 @@
 country_code: NL
 status: active
-terms:
-  - term: gelekte documenten
-  - term: datalek
-  - term: uitgelekt
-  - term: lek in
-  - term: vertrouwelijke informatie
-  - term: geheime documenten
+context_terms:
   - term: hack
+  - term: datalek
   - term: inbreuk
+  - term: klokkenluider
+  - term: schandaal
   - term: datadiefstal
   - term: persoonsgegevens
   - term: wachtwoordlek
   - term: e-maillek
+leak_assertion_terms:
+  - term: gelekte documenten
+  - term: documenten zijn uitgelekt
+  - term: uitgelekt
+  - term: lek in
+  - term: vertrouwelijke informatie
+  - term: vertrouwelijke documenten
+  - term: geheime documenten
+  - term: interne documenten gepubliceerd
+  - term: vertrouwelijke bestanden gepubliceerd
   - term: broncode gelekt
-  - term: uitlekken
   - term: staatsgeheim gelekt
-  - term: politiek schandaal
-  - term: klokkenluider
   - term: aanbesteding gelekt
   - term: raadsdocumenten
   - term: ministerie lek
+  - term: uitlekken
+  - term: dataset gelekt
+  - term: database dump
+  - term: email archive
+  - term: internal files
+  - term: leaked dataset
+  - term: document dump
+  - term: confidential documents
+  - term: source code leak

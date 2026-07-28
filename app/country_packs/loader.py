@@ -7,7 +7,8 @@ from app.country_packs.models import (
     CountryPackValidationError as ValError,
     CountryPackValidationResult,
     LanguagesFile,
-    LeakTermsFile,
+    ContextTermsFile,
+    LeakAssertionTermsFile,
     EntitiesFile,
     SourcesFile,
     SourceDef,
@@ -47,17 +48,36 @@ def _validate_languages_file(filepath: str) -> LanguagesFile | None:
         raise CountryPackParseError(f"Languages validatiefout: {e}", file_path=filepath)
 
 
-def _validate_leak_terms_file(filepath: str) -> LeakTermsFile | None:
+def _validate_context_terms_file(filepath: str) -> ContextTermsFile | None:
     try:
         data = _load_yaml(filepath)
-        if not data or "terms" not in data:
-            code = os.path.basename(os.path.dirname(filepath))
-            return LeakTermsFile(country_code=code, status="pending_population", terms=[])
-        return LeakTermsFile(**data)
+        if not data:
+            return None
+        if "context_terms" in data or "leak_assertion_terms" in data or "terms" in data:
+            if "context_terms" in data:
+                return ContextTermsFile(**data)
+            if "terms" in data:
+                return ContextTermsFile(country_code=data.get("country_code", ""), status=data.get("status", "pending_population"), context_terms=data["terms"])
+            return None
+        return None
     except CountryPackNotFoundError:
         return None
     except Exception as e:
-        raise CountryPackParseError(f"Leak terms validatiefout: {e}", file_path=filepath)
+        raise CountryPackParseError(f"Context terms validatiefout: {e}", file_path=filepath)
+
+
+def _validate_leak_assertion_terms_file(filepath: str) -> LeakAssertionTermsFile | None:
+    try:
+        data = _load_yaml(filepath)
+        if not data:
+            return None
+        if "leak_assertion_terms" in data:
+            return LeakAssertionTermsFile(**data)
+        return None
+    except CountryPackNotFoundError:
+        return None
+    except Exception as e:
+        raise CountryPackParseError(f"Leak assertion terms validatiefout: {e}", file_path=filepath)
 
 
 def _validate_entities_file(filepath: str) -> EntitiesFile | None:
@@ -104,9 +124,11 @@ def load_country_pack(country_code: str) -> CountryPack:
     except Exception as e:
         errors.append(str(e))
 
-    leak_terms = None
+    context_terms = None
+    leak_assertion_terms = None
     try:
-        leak_terms = _validate_leak_terms_file(terms_file)
+        context_terms = _validate_context_terms_file(terms_file)
+        leak_assertion_terms = _validate_leak_assertion_terms_file(terms_file)
     except Exception as e:
         errors.append(str(e))
 
@@ -132,7 +154,8 @@ def load_country_pack(country_code: str) -> CountryPack:
         country_code=country_code,
         status=status,
         languages=languages,
-        leak_terms=leak_terms,
+        context_terms=context_terms,
+        leak_assertion_terms=leak_assertion_terms,
         entities=entities,
         sources=sources,
         errors=errors,
@@ -170,20 +193,6 @@ def validate_all_country_packs() -> CountryPackValidationResult:
                 LanguagesFile(**pack.languages.model_dump())
             except Exception as e:
                 pack_errors.append(f"languages.yaml: {e}")
-
-        if pack.leak_terms and pack.leak_terms.status == "active":
-            try:
-                LeakTermsFile(**pack.leak_terms.model_dump())
-            except Exception as e:
-                pack_errors.append(f"leak_terms.yaml: {e}")
-            if not pack.leak_terms.terms:
-                pack_errors.append("Actief pack vereist minimaal één leak term")
-
-        if pack.entities:
-            try:
-                EntitiesFile(**pack.entities.model_dump())
-            except Exception as e:
-                pack_errors.append(f"entities.yaml: {e}")
 
         if pack.sources:
             try:

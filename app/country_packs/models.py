@@ -37,10 +37,10 @@ class LeakTerm(BaseModel):
     term: str = Field(..., min_length=1)
 
 
-class LeakTermsFile(BaseModel):
+class ContextTermsFile(BaseModel):
     country_code: str = Field(..., min_length=2, max_length=2)
     status: str = "pending_population"
-    terms: list[LeakTerm] = Field(default_factory=list)
+    context_terms: list[LeakTerm] = Field(default_factory=list)
 
     @field_validator("country_code")
     @classmethod
@@ -49,9 +49,34 @@ class LeakTermsFile(BaseModel):
             raise ValueError(f"country_code moet hoofdletters zijn: {v}")
         return v
 
-    @field_validator("terms")
+    @field_validator("context_terms")
     @classmethod
-    def dedup_terms(cls, v: list[LeakTerm]) -> list[LeakTerm]:
+    def dedup(cls, v: list[LeakTerm]) -> list[LeakTerm]:
+        seen: set[str] = set()
+        result: list[LeakTerm] = []
+        for t in v:
+            key = t.term.lower()
+            if key not in seen:
+                seen.add(key)
+                result.append(t)
+        return result
+
+
+class LeakAssertionTermsFile(BaseModel):
+    country_code: str = Field(..., min_length=2, max_length=2)
+    status: str = "pending_population"
+    leak_assertion_terms: list[LeakTerm] = Field(default_factory=list)
+
+    @field_validator("country_code")
+    @classmethod
+    def upper_country(cls, v: str) -> str:
+        if v != v.upper():
+            raise ValueError(f"country_code moet hoofdletters zijn: {v}")
+        return v
+
+    @field_validator("leak_assertion_terms")
+    @classmethod
+    def dedup(cls, v: list[LeakTerm]) -> list[LeakTerm]:
         seen: set[str] = set()
         result: list[LeakTerm] = []
         for t in v:
@@ -104,6 +129,10 @@ class SourceDef(BaseModel):
     content_modes: list[str] = Field(default_factory=list)
     access_method: str = Field(default="")
     connector_config: dict = Field(default_factory=dict)
+    validation_notes: str | None = None
+    validated_at: str | None = None
+    access_restrictions: str | None = None
+    expected_content_types: list[str] = Field(default_factory=list)
     enabled: bool = True
     poll_interval_minutes: int = Field(default=30, ge=5)
 
@@ -163,7 +192,8 @@ class CountryPack(BaseModel):
     country_code: str
     status: str = "pending_population"
     languages: LanguagesFile | None = None
-    leak_terms: LeakTermsFile | None = None
+    context_terms: ContextTermsFile | None = None
+    leak_assertion_terms: LeakAssertionTermsFile | None = None
     entities: EntitiesFile | None = None
     sources: SourcesFile | None = None
     errors: list[str] = Field(default_factory=list)

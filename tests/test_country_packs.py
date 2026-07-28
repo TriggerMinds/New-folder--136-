@@ -20,8 +20,8 @@ def test_nl_pack_active():
     assert pack.status == "active"
     assert pack.languages is not None
     assert len(pack.languages.languages) >= 1
-    assert pack.leak_terms is not None
-    assert len(pack.leak_terms.terms) >= 1
+    assert pack.context_terms is not None
+    assert len(pack.context_terms.context_terms) >= 1
     assert pack.sources is not None
     assert len(pack.sources.sources) >= 2
 
@@ -30,6 +30,7 @@ def test_nl_sources_have_rss_and_html():
     pack = load_country_pack("NL")
     types = {s.type for s in pack.sources.sources}
     assert "rss" in types
+    assert "html" in types
 
 
 def test_pending_population_packs_valid():
