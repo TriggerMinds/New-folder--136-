@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Raw Artifact Feed</h1>
+<p class="subtitle">Concrete publieke artifact discoveries — {{ total }} totaal</p>
+
+<div class="filters">
+    <form method="get" action="/artifacts">
+        <input type="text" name="artifact_type" placeholder="Type (document, repository, magnet...)" value="{{ artifact_type }}">
+        <button type="submit">Filter</button>
+        <a href="/artifacts" class="clear">Wissen</a>
+    </form>
+</div>
+
+<div class="pagination">
+    <span>Pagina {{ offset // limit + 1 }}</span>
+    {% if offset > 0 %}
+        <a href="/artifacts?limit={{ limit }}&offset={{ offset - limit }}&artifact_type={{ artifact_type }}">Vorig</a>
+    {% endif %}
+    {% if offset + limit < total %}
+        <a href="/artifacts?limit={{ limit }}&offset={{ offset + limit }}&artifact_type={{ artifact_type }}">Volgend</a>
+    {% endif %}
+</div>
+
+<div class="claim-list">
+{% for d in discoveries %}
+    <div class="claim-card">
+        <h2>
+            <a href="{{ d.original_locator }}" target="_blank">{{ d.filename or d.title or d.original_locator[:60] }}</a>
+        </h2>
+        <div class="meta">
+            <span class="tag auth-unexamined">{{ d.artifact_type }}</span>
+            <span class="tag ai-pending">{{ d.locator_type }}</span>
+            {% if d.host %}
+                <span class="host">{{ d.host }}</span>
+            {% endif %}
+            {% if d.file_extension %}
+                <span class="tag ai-skipped">{{ d.file_extension }}</span>
+            {% endif %}
+            {% if d.content_length %}
+                <span>{{ (d.content_length / 1024)|round(1) }} KB</span>
+            {% endif %}
+            <span class="tag">{{ d.acquisition_status }}</span>
+            {% if d.sha256 %}
+                <code title="{{ d.sha256 }}">SHA256</code>
+            {% endif %}
+            {% if d.ipfs_cid %}
+                <code>IPFS</code>
+            {% endif %}
+            {% if d.magnet_uri %}
+                <code>Magnet</code>
+            {% endif %}
+            {% if d.torrent_infohash %}
+                <code>Torrent</code>
+            {% endif %}
+        </div>
+        <div class="meta">
+            <span>{{ d.first_observed_at }}</span>
+        </div>
+    </div>
+{% else %}
+    <p class="empty">Geen artifacts gevonden.</p>
+{% endfor %}
+</div>
+{% endblock %}

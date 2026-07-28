@@ -25,6 +25,7 @@ from app.api.source_runs import router as source_runs_router
 from app.api.scheduler_api import router as scheduler_router
 from app.scheduler.scheduler import start_scheduler, stop_scheduler
 from app.api.source_signals import router as source_signals_router
+from app.api.artifacts import router as artifacts_router
 
 
 @asynccontextmanager
@@ -59,5 +60,6 @@ app.include_router(audit_router)
 app.include_router(web_router)
 app.include_router(country_packs_router)
 app.include_router(source_runs_router)
+app.include_router(artifacts_router)
 app.include_router(source_signals_router)
 app.include_router(scheduler_router)

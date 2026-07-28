@@ -13,6 +13,7 @@ from app.repositories.sources import SourceRepository
 from app.services.claim_registration import register_observed_leak_claim
 from app.services.leak_signal_detection import detect_leak_signal, has_claim_quality
 from app.services.artifact_indicator_extraction import extract_artifacts, extract_file_names, has_concrete_origin_indicator
+from app.services.artifact_discovery import register_artifact_discovery
 from app.services.source_signal import create_source_signal
 from app.services.origin_validation import validate_origin_candidate
 
@@ -113,6 +114,24 @@ async def run_source(source_id: UUID, db: AsyncSession) -> SourceRunResult:
 
         result.items_seen = len(conn_result.items)
         run_record.items_seen = result.items_seen
+        can_discover = source.can_create_artifact_discovery
+
+        if can_discover:
+            for item in conn_result.items:
+                try:
+                    ad = await register_artifact_discovery(
+                        session=db,
+                        source_id=source.id,
+                        url=item.url,
+                        title=item.title,
+                        description=item.content_excerpt,
+                        raw_metadata={**item.raw_metadata, "source_role": source.source_role},
+                        source_run_id=run_record.id,
+                    )
+                    if ad:
+                        result.artifact_items_seen += 1
+                except Exception:
+                    pass
 
         for item in conn_result.items:
             item_errors_before = len(result.item_errors)

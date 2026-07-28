@@ -119,10 +119,13 @@ class SourceDef(BaseModel):
     id: str = Field(..., min_length=1, pattern=r"^[a-z][a-z0-9_]*$")
     name: str = Field(..., min_length=1)
     type: str = Field(...)
+    source_layer: str = Field(default="reference_only")
     source_role: str = Field(default="signal")
     source_category: str = Field(default="specialist_blog")
     discovery_priority: str = Field(default="secondary")
     can_create_primary_claim: bool = True
+    can_create_artifact_discovery: bool = False
+    can_create_reference_observation: bool = True
     base_url: str = Field(...)
     poll_url: str = Field(...)
     languages: list[str] = Field(default_factory=list)
@@ -139,7 +142,7 @@ class SourceDef(BaseModel):
     @field_validator("type")
     @classmethod
     def valid_type(cls, v: str) -> str:
-        allowed = {"rss", "html", "archive", "git_host", "web_archive", "public_channel"}
+        allowed = {"rss", "html", "archive", "git_host", "web_archive", "public_channel", "raw_archive"}
         if v not in allowed:
             raise ValueError(f"Type moet een van {allowed} zijn, niet: {v}")
         return v

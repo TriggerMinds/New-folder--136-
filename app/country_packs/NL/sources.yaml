@@ -1,28 +1,9 @@
 country_code: NL
 status: active
 sources:
-  - id: nl_ddosecrets_raw
-    name: Distributed Denial of Secrets
-    type: html
-    source_layer: primary_raw
-    source_category: raw_leak_archive
-    discovery_priority: primary
-    can_create_primary_claim: true
-    can_create_artifact_discovery: true
-    can_create_reference_observation: false
-    base_url: https://ddosecrets.com
-    poll_url: https://ddosecrets.com/wiki/Special:AllPages
-    languages:
-      - en
-    connector_config:
-      item_selector: ul.mw-allpages-chunk a
-      max_items: 100
-    enabled: true
-    poll_interval_minutes: 60
-
   - id: nl_cryptome_archive
     name: Cryptome Document Archive
-    type: html
+    type: raw_archive
     source_layer: primary_raw
     source_category: raw_leak_archive
     discovery_priority: primary
@@ -34,8 +15,8 @@ sources:
     languages:
       - en
     connector_config:
-      item_selector: body a[href]
-      max_items: 200
+      archive_mode: cryptome
+      max_items: 500
     enabled: true
     poll_interval_minutes: 60
 
@@ -49,13 +30,12 @@ sources:
     can_create_artifact_discovery: true
     can_create_reference_observation: false
     base_url: https://github.com
-    poll_url: https://github.com/search?o=desc&q=european+OR+netherlands+OR+commission+OR+eu+AND+leak+OR+classified+OR+confidential+OR+classified+documents&s=updated&type=repositories
+    poll_url: https://github.com/search
     languages:
       - en
     connector_config:
-      item_selector: div.d-flex h3 a
       max_items: 100
-    enabled: true
+    enabled: false
     poll_interval_minutes: 30
 
   - id: nl_archive_org_eu_data
@@ -68,13 +48,12 @@ sources:
     can_create_artifact_discovery: true
     can_create_reference_observation: false
     base_url: https://archive.org
-    poll_url: https://archive.org/search?query=Netherlands+AND+leak&sort=-publicdate
+    poll_url: https://archive.org/search
     languages:
       - en
     connector_config:
-      item_selector: div.item-ttl a
       max_items: 100
-    enabled: true
+    enabled: false
     poll_interval_minutes: 60
 
   - id: nl_pastebin_search
@@ -91,9 +70,8 @@ sources:
     languages:
       - en
     connector_config:
-      item_selector: div#menu_2 li a
       max_items: 100
-    enabled: true
+    enabled: false
     poll_interval_minutes: 30
 
   - id: nl_bbc_cyber_rss
@@ -109,7 +87,7 @@ sources:
     poll_url: https://feeds.bbci.co.uk/news/technology/rss.xml
     languages:
       - en
-    enabled: true
+    enabled: false
     poll_interval_minutes: 30
 
   - id: nl_nrc_rss
@@ -125,7 +103,7 @@ sources:
     poll_url: https://www.nrc.nl/rss/
     languages:
       - nl
-    enabled: true
+    enabled: false
     poll_interval_minutes: 15
 
   - id: nl_ad_rss
@@ -141,7 +119,7 @@ sources:
     poll_url: https://www.ad.nl/rss.xml
     languages:
       - nl
-    enabled: true
+    enabled: false
     poll_interval_minutes: 15
 
   - id: nl_volkskrant_rss
@@ -157,7 +135,7 @@ sources:
     poll_url: https://www.volkskrant.nl/nieuws/rss.xml
     languages:
       - nl
-    enabled: true
+    enabled: false
     poll_interval_minutes: 30
 
   - id: nl_rtlnieuws_rss
@@ -173,5 +151,5 @@ sources:
     poll_url: https://www.rtlnieuws.nl/rss.xml
     languages:
       - nl
-    enabled: true
+    enabled: false
     poll_interval_minutes: 15
