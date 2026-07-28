@@ -84,7 +84,7 @@ async def run_source(source_id: UUID, db: AsyncSession) -> SourceRunResult:
     result.source_external_id = source.external_id
     result.started_at = datetime.now(timezone.utc)
 
-    run_record = SourceRun(source_id=source.id, started_at=result.started_at, items_seen=1, error="pending")
+    run_record = SourceRun(source_id=source.id, started_at=result.started_at, run_status="running")
     run_record = await run_repo.create_run(run_record)
 
     try:
@@ -119,7 +119,7 @@ async def run_source(source_id: UUID, db: AsyncSession) -> SourceRunResult:
         if can_discover:
             for item in conn_result.items:
                 try:
-                    ad = await register_artifact_discovery(
+                    adr = await register_artifact_discovery(
                         session=db,
                         source_id=source.id,
                         url=item.url,
@@ -128,10 +128,17 @@ async def run_source(source_id: UUID, db: AsyncSession) -> SourceRunResult:
                         raw_metadata={**item.raw_metadata, "source_role": source.source_role},
                         source_run_id=run_record.id,
                     )
-                    if ad:
+                    if adr:
                         result.artifact_items_seen += 1
-                except Exception:
-                    pass
+                        if adr.is_new:
+                            run_record.artifacts_created = (run_record.artifacts_created or 0) + 1
+                        else:
+                            run_record.artifacts_deduplicated = (run_record.artifacts_deduplicated or 0) + 1
+                        if adr.distribution_created:
+                            run_record.distributions_created = (run_record.distributions_created or 0) + 1
+                except Exception as exc:
+                    result.item_errors.append(ItemError(getattr(item, "url", "unknown"), getattr(item, "title", "unknown"), "artifact_discovery", str(exc), type(exc).__name__).to_dict())
+                    run_record.artifact_registration_errors = (run_record.artifact_registration_errors or 0) + 1
 
         for item in conn_result.items:
             item_errors_before = len(result.item_errors)
@@ -313,7 +320,9 @@ async def run_source(source_id: UUID, db: AsyncSession) -> SourceRunResult:
         result.success = True
         result.run_status = "partial_success" if result.item_errors else "success"
         run_record.success = True
+        run_record.error = None
         run_record.run_status = result.run_status
+        run_record.raw_items_seen = len(conn_result.items)
         run_record.items_matched = result.items_matched
         run_record.claims_created = result.claims_created
         run_record.claims_deduplicated = result.claims_deduplicated
