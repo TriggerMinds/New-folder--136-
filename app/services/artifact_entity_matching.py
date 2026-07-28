@@ -1,5 +1,6 @@
 import re
 import unicodedata
+from urllib.parse import urlparse
 
 from app.country_packs.loader import load_country_pack
 
@@ -49,7 +50,7 @@ COUNTRY_MAP = [
     (re.compile(r"\bgriekenland\b", re.I), "GR"),
     (re.compile(r"\bpoland\b", re.I), "PL"),
     (re.compile(r"\bpolen\b", re.I), "PL"),
-    (re.compile(r"\bmagyarorszag\b", re.I), "HU"),
+    (re.compile(r"\bhungary\b", re.I), "HU"),
     (re.compile(r"\bhongarije\b", re.I), "HU"),
     (re.compile(r"\bromania\b", re.I), "RO"),
     (re.compile(r"\broemenie\b", re.I), "RO"),
@@ -71,9 +72,22 @@ def _norm(text: str) -> str:
     return unicodedata.normalize("NFKC", text)
 
 
+def _country_from_hostname(locator: str | None) -> list[str]:
+    if not locator:
+        return []
+    hostname = urlparse(locator).hostname
+    if not hostname:
+        return []
+    hostname = hostname.lower()
+    for suffix, code in HOST_COUNTRY.items():
+        if hostname == suffix or hostname.endswith(suffix):
+            return [code]
+    return []
+
+
 def match_entities(title: str | None, description: str | None, filename: str | None, locator: str | None, country_code: str) -> tuple[list, list, list]:
     combined = ""
-    for part in [title, description, filename, locator]:
+    for part in [title, description, filename]:
         if part:
             combined += _norm(part) + " "
 
@@ -81,11 +95,7 @@ def match_entities(title: str | None, description: str | None, filename: str | N
     for pattern, code in COUNTRY_MAP:
         if pattern.search(combined):
             countries.add(code)
-    for field in [locator, combined]:
-        if field:
-            for suffix, code in HOST_COUNTRY.items():
-                if suffix in field.lower():
-                    countries.add(code)
+    countries.update(_country_from_hostname(locator))
 
     eu_entities = set()
     for search_name, canonical_name in EU_ENTITIES:

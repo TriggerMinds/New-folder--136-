@@ -20,6 +20,12 @@ class AuditEvent(Base):
         nullable=True,
         index=True,
     )
+    artifact_discovery_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("artifact_discoveries.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     timestamp: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=datetime.now
     )
