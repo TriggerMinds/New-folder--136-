@@ -6,3 +6,5 @@ import app.connectors.git_host
 import app.connectors.web_archive
 import app.connectors.public_channel
 import app.connectors.raw_archive
+import app.connectors.github_api
+import app.connectors.internet_archive_api

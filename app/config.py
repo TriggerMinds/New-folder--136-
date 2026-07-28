@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     connector_concurrency: int = Field(4, alias="CONNECTOR_CONCURRENCY")
     scheduler_timezone: str = Field("UTC", alias="SCHEDULER_TIMEZONE")
     download_artifacts: bool = Field(False, alias="DOWNLOAD_ARTIFACTS")
+    github_token: str = Field("", alias="GITHUB_TOKEN")
 
 
 settings = Settings()

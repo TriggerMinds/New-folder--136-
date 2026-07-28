@@ -17,12 +17,14 @@ sources:
     connector_config:
       archive_mode: cryptome
       max_items: 500
+      max_index_depth: 2
+      max_index_pages: 25
     enabled: true
     poll_interval_minutes: 60
 
-  - id: nl_github_public_search
-    name: GitHub EU Leak Repositories
-    type: html
+  - id: nl_github_api
+    name: GitHub API - EU Leak Repositories
+    type: github_api
     source_layer: primary_raw
     source_category: git_host
     discovery_priority: primary
@@ -30,14 +32,40 @@ sources:
     can_create_artifact_discovery: true
     can_create_reference_observation: false
     base_url: https://github.com
-    poll_url: https://github.com/search
+    poll_url: https://api.github.com/search/repositories
     languages:
       - en
     connector_config:
-      max_items: 100
-    enabled: false
-    disabled_reason: HTML search connector is not operational and produced no validated artifacts
+      max_items: 200
+      search_queries:
+        - Netherlands+leak+OR+classified+OR+documents+OR+database
+        - EU+leak+OR+classified+OR+documents+OR+dataset
+        - European+Commission+leak+OR+classified+OR+documents
+    enabled: true
     poll_interval_minutes: 30
+
+  - id: nl_internet_archive_api
+    name: Internet Archive - EU Document Collections
+    type: internet_archive_api
+    source_layer: primary_raw
+    source_category: user_upload_archive
+    discovery_priority: primary
+    can_create_primary_claim: true
+    can_create_artifact_discovery: true
+    can_create_reference_observation: false
+    base_url: https://archive.org
+    poll_url: https://archive.org/advancedsearch.php
+    languages:
+      - en
+    connector_config:
+      max_items: 200
+      search_queries:
+        - subject:(Netherlands) AND (leak OR breach OR dump OR classified OR confidential OR documents OR emails)
+        - subject:(European Commission) AND (leak OR breach OR dump OR classified OR documents)
+        - subject:(EU) AND (leak OR breach OR dump OR classified OR documents OR data)
+        - (Netherlands+leak) OR (Dutch+government+documents+classified)
+    enabled: true
+    poll_interval_minutes: 60
 
   - id: nl_archive_org_eu_data
     name: Archive.org - EU Document Collections
