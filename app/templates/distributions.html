@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Distributions</h1>
+<p class="subtitle">Waarnemingen van artifacts op mirrors, archieven en kanalen — {{ total }} totaal</p>
+<table>
+    <thead><tr><th>Datum</th><th>Artifact</th><th>Bron</th><th>Type</th><th>Locator</th></tr></thead>
+    <tbody>
+    {% for d in dists %}
+        <tr>
+            <td>{{ d.observed_at|datetime_utc }}</td>
+            <td><a href="/artifacts/{{ d.artifact_discovery_id }}">{{ d.artifact_discovery_id|string|truncate(8) }}</a></td>
+            <td>{{ d.source_id|string|truncate(8) }}</td>
+            <td>{{ d.distribution_type }}</td>
+            <td><a href="{{ d.locator }}" target="_blank">{{ d.locator[:60] }}</a></td>
+        </tr>
+    {% else %}
+        <tr><td colspan="5">Geen distributies gevonden.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Reference Observations</h1>
+<p class="subtitle">Contextuele verwijzingen naar artifacts — {{ total }} totaal</p>
+<table>
+    <thead><tr><th>Datum</th><th>Artifact</th><th>Claim</th><th>Type</th><th>Titel</th><th>URL</th></tr></thead>
+    <tbody>
+    {% for r in refs %}
+        <tr>
+            <td>{{ r.observed_at|datetime_utc }}</td>
+            <td>{% if r.artifact_discovery_id %}<a href="/artifacts/{{ r.artifact_discovery_id }}">{{ r.artifact_discovery_id|string|truncate(8) }}</a>{% else %}—{% endif %}</td>
+            <td>{{ r.claim_id|string|truncate(8) if r.claim_id else '—' }}</td>
+            <td>{{ r.reference_type }}</td>
+            <td>{{ r.title[:60] if r.title else '—' }}</td>
+            <td><a href="{{ r.url }}" target="_blank">{{ r.url[:50] }}</a></td>
+        </tr>
+    {% else %}
+        <tr><td colspan="6">Geen referenties gevonden.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

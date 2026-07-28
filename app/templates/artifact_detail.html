@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ d.filename or d.title or 'Artifact' }}</h1>
+<table>
+    <tr><td>ID</td><td><code>{{ d.id }}</code></td></tr>
+    <tr><td>Type</td><td>{{ d.artifact_type }}</td></tr>
+    <tr><td>Locator</td><td>{{ d.locator_type }}</td></tr>
+    <tr><td>Eerste observatie</td><td title="{{ d.first_observed_at }}">{{ d.first_observed_at|datetime_utc }}</td></tr>
+    <tr><td>Laatste observatie</td><td title="{{ d.last_observed_at }}">{{ d.last_observed_at|datetime_utc }}</td></tr>
+    <tr><td>Locator</td><td><a href="{{ d.original_locator }}" target="_blank">{{ d.original_locator[:100] }}</a></td></tr>
+    <tr><td>Host</td><td>{{ d.host or '—' }}</td></tr>
+    <tr><td>Bestandsnaam</td><td>{{ d.filename or '—' }}</td></tr>
+    <tr><td>Extensie</td><td>{{ d.file_extension or '—' }}</td></tr>
+    <tr><td>Content-Length</td><td>{{ (d.content_length / 1024)|round(1) if d.content_length else '—' }} KB</td></tr>
+    <tr><td>SHA-256</td><td><code>{{ d.sha256 or '—' }}</code></td></tr>
+    <tr><td>Magnet URI</td><td><code>{{ d.magnet_uri[:60] if d.magnet_uri else '—' }}</code></td></tr>
+    <tr><td>Torrent Infohash</td><td>{{ d.torrent_infohash or '—' }}</td></tr>
+    <tr><td>IPFS CID</td><td>{{ d.ipfs_cid or '—' }}</td></tr>
+    <tr><td>Repository</td><td><a href="{{ d.repository_url }}" target="_blank">{{ d.repository_url[:60] if d.repository_url else '—' }}</a></td></tr>
+    <tr><td>Archive ID</td><td>{{ d.archive_identifier or '—' }}</td></tr>
+    <tr><td>Access Status</td><td>{{ d.access_status }}</td></tr>
+    <tr><td>Acquisition Status</td><td>{{ d.acquisition_status }}</td></tr>
+    <tr><td>Analysis Status</td><td>{{ d.analysis_status }}</td></tr>
+    <tr><td>Bron</td><td>{{ d.source_id }}</td></tr>
+</table>
+
+<h2>Distributies ({{ distributions|length }})</h2>
+{% if distributions %}
+<table><thead><tr><th>Datum</th><th>Type</th><th>Locator</th></tr></thead>
+<tbody>{% for dist in distributions %}
+<tr><td>{{ dist.observed_at|datetime_utc }}</td><td>{{ dist.distribution_type }}</td><td><a href="{{ dist.locator }}" target="_blank">{{ dist.locator[:80] }}</a></td></tr>
+{% endfor %}</tbody></table>
+{% else %}<p>Geen distributies.</p>{% endif %}
+{% endblock %}

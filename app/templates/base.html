@@ -1,23 +1,19 @@
 <!DOCTYPE html>
 <html lang="nl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EU Leak Discovery{% if title %} - {{ title }}{% endif %}</title>
-    <link rel="stylesheet" href="/static/app.css">
-</head>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>EU Leak Discovery</title><link rel="stylesheet" href="/static/app.css"></head>
 <body>
-    <nav class="topnav">
-        <a href="/">Raw Artifacts</a>
-        <a href="/sources">Bronnen</a>
-        <a href="/source-runs">Runs</a>
-        <a href="/country-packs">Country Packs</a>
-        <a href="/claims">Claims</a>
-        <a href="/source-signals">Signals</a>
-        <a href="/system/health">Health</a>
-    </nav>
-    <main class="container">
-        {% block content %}{% endblock %}
-    </main>
+<nav class="topnav">
+    <a href="/">Raw Artifacts</a>
+    <a href="/distributions">Distributions</a>
+    <a href="/references">References</a>
+    <a href="/sources">Bronnen</a>
+    <a href="/source-runs">Runs</a>
+    <a href="/country-packs">Packs</a>
+    <a href="/claims">Claims</a>
+    <a href="/source-signals">Signals</a>
+    <a href="/system/health">Health</a>
+</nav>
+<main class="container">{% block content %}{% endblock %}</main>
 </body>
 </html>

@@ -24,6 +24,7 @@ from app.api.country_packs import router as country_packs_router
 from app.api.source_runs import router as source_runs_router
 from app.api.scheduler_api import router as scheduler_router
 from app.scheduler.scheduler import start_scheduler, stop_scheduler
+from app.utils.template_filters import register_template_filters
 from app.api.source_signals import router as source_signals_router
 from app.api.artifacts import router as artifacts_router
 
@@ -49,6 +50,7 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 from jinja2 import Environment, FileSystemLoader
 jinja_env = Environment(loader=FileSystemLoader("app/templates"), auto_reload=False)
+register_template_filters(jinja_env)
 templates = Jinja2Templates(env=jinja_env)
 app.state.templates = templates
 

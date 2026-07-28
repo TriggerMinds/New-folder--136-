@@ -78,8 +78,19 @@ async def main():
                         select(DistributionObservation).where(DistributionObservation.artifact_discovery_id == dup.id)
                     )
                     for dob in dobs.scalars().all():
-                        dob.artifact_discovery_id = canonical.id
-                        session.add(dob)
+                        existing_check = await session.execute(
+                            select(func.count(DistributionObservation.id)).where(
+                                DistributionObservation.artifact_discovery_id == canonical.id,
+                                DistributionObservation.source_id == dob.source_id,
+                                DistributionObservation.canonical_locator == dob.canonical_locator,
+                                DistributionObservation.distribution_type == dob.distribution_type,
+                            )
+                        )
+                        if (existing_check.scalar() or 0) == 0:
+                            dob.artifact_discovery_id = canonical.id
+                            session.add(dob)
+                        else:
+                            await session.delete(dob)
                     await session.delete(dup)
                 print(f"    -> Consolidated {len(dups)} duplicates into {canonical.id}")
 

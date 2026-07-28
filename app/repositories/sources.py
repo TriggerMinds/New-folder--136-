@@ -1,9 +1,21 @@
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select, literal
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.models.source import Source
+
+
+def _lifecycle_order() -> object:
+    return case(
+        (Source.lifecycle_status == "active", 1),
+        (Source.lifecycle_status == "inactive", 2),
+        (Source.lifecycle_status == "broken", 3),
+        (Source.lifecycle_status == "blocked", 4),
+        (Source.lifecycle_status == "historical", 5),
+        (Source.lifecycle_status == "superseded", 6),
+        else_=99,
+    )
 
 
 class SourceRepository:
@@ -39,11 +51,7 @@ class SourceRepository:
             stmt = stmt.where(Source.country_code == country_code)
         if not include_historical:
             stmt = stmt.where(Source.lifecycle_status != "historical")
-        order = func.array_position(
-            func.array(["active", "inactive", "broken", "blocked", "historical", "superseded"]),
-            Source.lifecycle_status
-        )
-        stmt = stmt.order_by(order.nullslast(), Source.source_layer, Source.name).limit(limit).offset(offset)
+        stmt = stmt.order_by(_lifecycle_order(), Source.source_layer, Source.name).limit(limit).offset(offset)
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
