@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Source Run Detail</h1>
+<table>
+    <tr><td>Run ID</td><td><code>{{ run.id }}</code></td></tr>
+    <tr><td>Bron</td><td>{{ source_name }} ({{ source_external }})</td></tr>
+    <tr><td>Status</td><td><span class="tag {% if run.run_status == 'success' %}ai-enriched{% elif run.run_status == 'partial_success' %}auth-disputed{% else %}auth-confirmed_fabricated{% endif %}">{{ run.run_status }}</span></td></tr>
+    <tr><td>Start</td><td>{{ run.started_at|datetime_utc if run.started_at else '—' }}</td></tr>
+    <tr><td>Einde</td><td>{{ run.completed_at|datetime_utc if run.completed_at else '—' }}</td></tr>
+    <tr><td>Fout</td><td>{{ run.error or '—' }}</td></tr>
+</table>
+<h2>Metrics</h2>
+<table>
+    <tr><td>Raw items</td><td>{{ run.raw_items_seen or run.items_seen }}</td></tr>
+    <tr><td>Artifact kandidaten</td><td>{{ run.artifact_candidates_seen }}</td></tr>
+    <tr><td>Artifacts nieuw</td><td>{{ run.artifacts_created }}</td></tr>
+    <tr><td>Artifacts dedup</td><td>{{ run.artifacts_deduplicated }}</td></tr>
+    <tr><td>Distributies</td><td>{{ run.distributions_created }}</td></tr>
+    <tr><td>Afgewezen</td><td>{{ run.candidates_rejected }}</td></tr>
+    <tr><td>Registratiefouten</td><td>{{ run.artifact_registration_errors }}</td></tr>
+    <tr><td>HTTP requests</td><td>{{ run.requests_made }}</td></tr>
+    <tr><td>Rate limit resterend</td><td>{{ run.rate_limit_remaining or '—' }}</td></tr>
+    <tr><td>Item errors</td><td>{{ run.item_errors_count }}</td></tr>
+</table>
+{% if run.item_errors %}
+<h2>Item Fouten</h2>
+<table><thead><tr><th>Stage</th><th>Type</th><th>URL</th><th>Fout</th></tr></thead>
+<tbody>{% for err in run.item_errors %}<tr><td>{{ err.stage }}</td><td>{{ err.exception_type }}</td><td>{{ err.url[:60] }}</td><td>{{ err.message[:100] }}</td></tr>{% endfor %}</tbody></table>
+{% endif %}
+<p><a href="/source-runs">&larr; Terug naar runs</a></p>
+{% endblock %}

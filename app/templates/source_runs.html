@@ -1,38 +1,34 @@
 {% extends "base.html" %}
 {% block content %}
 <h1>Source Runs</h1>
-<p class="subtitle">Uitgevoerde broncontroles</p>
-
+<p class="subtitle">Uitgevoerde broncontroles. Huidige weergave: {{ view }}</p>
+<p>
+    <a href="/source-runs?view=current">Huidige</a> |
+    <a href="/source-runs?view=historical">Historisch</a> |
+    <a href="/source-runs?view=all">Alle</a>
+</p>
 <table>
-    <thead>
+    <thead><tr>
+        <th>Bron</th><th>Type</th><th>Status</th><th>Start</th><th>Einde</th>
+        <th>Raw</th><th>Nieuw</th><th>Dedup</th><th>Distr</th><th>Geweigerd</th><th>Reg.fouten</th><th>Itemfouten</th><th>Fout</th>
+    </tr></thead>
+    <tbody>{% for run in runs %}
         <tr>
-            <th>Bron</th>
-            <th>Start</th>
-            <th>Einde</th>
-            <th>Succes</th>
-            <th>Items</th>
-            <th>Matches</th>
-            <th>Nieuwe claims</th>
-            <th>Dedup</th>
-            <th>Fout</th>
-        </tr>
-    </thead>
-    <tbody>
-    {% for run in runs %}
-        <tr>
-            <td>{{ run.source_id | string | truncate(8) }}</td>
-            <td>{{ run.started_at }}</td>
-            <td>{{ run.completed_at or '—' }}</td>
-            <td>{{ 'Ja' if run.success else 'Nee' }}</td>
-            <td>{{ run.items_seen }}</td>
-            <td>{{ run.items_matched }}</td>
-            <td>{{ run.claims_created }}</td>
-            <td>{{ run.claims_deduplicated }}</td>
+            <td><a href="/source-runs/{{ run.id }}">{{ run.source_id|string|truncate(8) }}</a></td>
+            <td>—</td>
+            <td><span class="tag {% if run.run_status == 'success' %}ai-enriched{% elif run.run_status == 'partial_success' %}auth-disputed{% else %}auth-confirmed_fabricated{% endif %}">{{ run.run_status }}</span></td>
+            <td>{{ run.started_at|datetime_utc if run.started_at else '—' }}</td>
+            <td>{{ run.completed_at|datetime_utc if run.completed_at else '—' }}</td>
+            <td>{{ run.raw_items_seen or run.items_seen }}</td>
+            <td>{{ run.artifacts_created }}</td>
+            <td>{{ run.artifacts_deduplicated }}</td>
+            <td>{{ run.distributions_created }}</td>
+            <td>{{ run.candidates_rejected }}</td>
+            <td>{{ run.artifact_registration_errors }}</td>
+            <td>{{ run.item_errors_count }}</td>
             <td>{{ run.error or '—' }}</td>
         </tr>
-    {% else %}
-        <tr><td colspan="9">Geen source runs gevonden.</td></tr>
-    {% endfor %}
+    {% else %}<tr><td colspan="13">Geen runs gevonden.</td></tr>{% endfor %}
     </tbody>
 </table>
 {% endblock %}

@@ -102,6 +102,8 @@ class InternetArchiveAPIConnector(BaseConnector):
                     result.completed_at = datetime.now(timezone.utc)
                     return result
 
+        result.requests_made = len(queries)
+        result.raw_results = len(seen_ids)
         result.success = True
         result.completed_at = datetime.now(timezone.utc)
         return result

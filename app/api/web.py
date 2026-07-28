@@ -228,6 +228,33 @@ async def source_runs_page(
     })
 
 
+@router.get("/source-runs/{run_id}", response_class=HTMLResponse)
+async def source_run_detail(request: Request, run_id: str, db: AsyncSession = Depends(get_db)):
+    from app.repositories.source_runs import SourceRunRepository
+    try:
+        uid = UUID(run_id)
+    except ValueError:
+        return HTMLResponse("<h1>404</h1>", status_code=404)
+    repo = SourceRunRepository(db)
+    run = await repo.get_run(uid)
+    if run is None:
+        return HTMLResponse("<h1>404</h1>", status_code=404)
+    source_name = ""
+    source_external = ""
+    try:
+        r2 = await db.execute(select(Source).where(Source.id == run.source_id))
+        src = r2.scalar_one_or_none()
+        if src:
+            source_name = src.name
+            source_external = src.external_id
+    except Exception:
+        pass
+    templates = request.app.state.templates
+    return templates.TemplateResponse(request, "source_run_detail.html", {
+        "run": run, "source_name": source_name, "source_external": source_external,
+    })
+
+
 @router.get("/source-signals", response_class=HTMLResponse)
 async def source_signals_page(request: Request, limit: int = Query(default=200), offset: int = Query(default=0), db: AsyncSession = Depends(get_db)):
     repo = SourceSignalRepository(db)

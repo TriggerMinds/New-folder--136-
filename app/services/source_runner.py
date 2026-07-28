@@ -317,12 +317,14 @@ async def run_source(source_id: UUID, db: AsyncSession) -> SourceRunResult:
         source.last_success_at = datetime.now(timezone.utc)
         source.consecutive_failures = 0
         await repo.update_source_status(source, last_success_at=source.last_success_at, consecutive_failures=0)
-        result.success = True
         result.run_status = "partial_success" if result.item_errors else "success"
-        run_record.success = True
-        run_record.error = None
+        result.success = result.run_status == "success"
         run_record.run_status = result.run_status
+        run_record.success = result.success
+        run_record.error = None
         run_record.raw_items_seen = len(conn_result.items)
+        run_record.requests_made = getattr(conn_result, "requests_made", 0)
+        run_record.rate_limit_remaining = getattr(conn_result, "rate_limit_remaining", None)
         run_record.items_matched = result.items_matched
         run_record.claims_created = result.claims_created
         run_record.claims_deduplicated = result.claims_deduplicated

@@ -24,3 +24,9 @@ class ConnectorResult(BaseModel):
     success: bool = False
     error: str | None = None
     http_status: int | None = None
+    requests_made: int = 0
+    raw_results: int = 0
+    accepted_candidates: int = 0
+    rejected_candidates: int = 0
+    rejection_reasons: list[str] = Field(default_factory=list)
+    rate_limit_remaining: int | None = None
