@@ -8,6 +8,10 @@ from app.connectors.models import ConnectorResult, DiscoveredItem
 from app.connectors.registry import register_connector
 from app.config import settings
 from app.database.models.source import Source
+from app.services.date_provenance import map_internet_archive
+
+ACCEPT_MEDIATYPES = {"dataset", "collection", "texts", "data", "software", "archives"}
+REJECT_MEDIATYPES = {"audio", "etree", "movies", "image", "web", "account", "broadcast"}
 
 
 class InternetArchiveAPIConnector(BaseConnector):
@@ -44,51 +48,48 @@ class InternetArchiveAPIConnector(BaseConnector):
                         if not identifier or identifier in seen_ids:
                             continue
                         seen_ids.add(identifier)
+                        mediatype = (entry.get("mediatype") or "").lower()
+
+                        if mediatype in REJECT_MEDIATYPES:
+                            continue
+                        if mediatype not in ACCEPT_MEDIATYPES:
+                            continue
+
                         title = entry.get("title") or identifier
-                        creator = entry.get("creator") or ""
-                        subjects = entry.get("subject") or []
-                        if isinstance(subjects, str):
-                            subjects = [subjects]
-                        mediatype = entry.get("mediatype") or "unknown"
-                        publicdate = entry.get("publicdate")
-                        addeddate = entry.get("addeddate")
+                        desc_raw = entry.get("description", "") or ""
+                        if isinstance(desc_raw, list):
+                            desc_raw = " | ".join(str(d) for d in desc_raw)
 
-                        pub_dt = None
-                        if publicdate:
-                            try:
-                                pub_dt = datetime.fromisoformat(publicdate.replace("Z", "+00:00"))
-                            except (ValueError, TypeError):
-                                pass
+                        dp = map_internet_archive(entry)
 
-                        desc = entry.get("description", "") or ""
-                        if isinstance(desc, list):
-                            desc = " | ".join(str(d) for d in desc)
                         item = DiscoveredItem(
                             source_external_id=source.external_id,
                             url=f"https://archive.org/details/{identifier}",
                             title=title[:500] if title else identifier,
-                            content=desc[:5000] or None,
-                            content_excerpt=desc[:300] or None,
-                            published_at=pub_dt,
+                            content=desc_raw[:5000] or None,
+                            content_excerpt=desc_raw[:300] or None,
+                            published_at=dp.published_at,
                             raw_metadata={
                                 "source_role": source.source_role,
                                 "source_category": source.source_category,
                                 "source": "internet_archive_api",
                                 "mediatype": mediatype,
                                 "collection": entry.get("collection", ""),
-                                "creator": creator,
-                                "subject": subjects,
+                                "creator": entry.get("creator", ""),
+                                "subject": entry.get("subject", []),
                                 "language": entry.get("language", ""),
                                 "identifier": identifier,
-                                "publicdate": publicdate,
-                                "addeddate": addeddate,
+                                "publicdate": entry.get("publicdate"),
+                                "addeddate": entry.get("addeddate"),
                                 "source_date_method": "source_api",
-                                "source_date_precision": "exact_datetime",
-                                "source_date_confidence": "authoritative",
-                                "source_created_at": publicdate,
+                                "source_date_precision": dp.precision,
+                                "source_date_confidence": dp.confidence,
+                                "source_date_evidence": dp.evidence,
                                 "upload_date_method": "archive_metadata",
                                 "upload_date_confidence": "authoritative",
-                                "upload_date_raw": addeddate or publicdate or "",
+                                "upload_date_raw": entry.get("addeddate") or entry.get("publicdate") or "",
+                                "source_uploaded_at": str(dp.source_uploaded_at) if dp.source_uploaded_at else None,
+                                "source_added_at": str(dp.source_added_at) if dp.source_added_at else None,
                             },
                         )
                         result.items.append(item)

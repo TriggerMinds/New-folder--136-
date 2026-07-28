@@ -7,7 +7,7 @@ sources:
     source_layer: primary_raw
     source_category: raw_leak_archive
     discovery_priority: primary
-    can_create_primary_claim: true
+    can_create_primary_claim: false
     can_create_artifact_discovery: true
     can_create_reference_observation: false
     base_url: https://cryptome.org
@@ -28,7 +28,7 @@ sources:
     source_layer: primary_raw
     source_category: git_host
     discovery_priority: primary
-    can_create_primary_claim: true
+    can_create_primary_claim: false
     can_create_artifact_discovery: true
     can_create_reference_observation: false
     base_url: https://github.com
@@ -50,7 +50,7 @@ sources:
     source_layer: primary_raw
     source_category: user_upload_archive
     discovery_priority: primary
-    can_create_primary_claim: true
+    can_create_primary_claim: false
     can_create_artifact_discovery: true
     can_create_reference_observation: false
     base_url: https://archive.org
@@ -63,129 +63,5 @@ sources:
         - subject:(Netherlands) AND (leak OR breach OR dump OR classified OR confidential OR documents OR emails)
         - subject:(European Commission) AND (leak OR breach OR dump OR classified OR documents)
         - subject:(EU) AND (leak OR breach OR dump OR classified OR documents OR data)
-        - (Netherlands+leak) OR (Dutch+government+documents+classified)
     enabled: true
     poll_interval_minutes: 60
-
-  - id: nl_archive_org_eu_data
-    name: Archive.org - EU Document Collections
-    type: html
-    source_layer: primary_raw
-    source_category: user_upload_archive
-    discovery_priority: primary
-    can_create_primary_claim: true
-    can_create_artifact_discovery: true
-    can_create_reference_observation: false
-    base_url: https://archive.org
-    poll_url: https://archive.org/search
-    languages:
-      - en
-    connector_config:
-      max_items: 100
-    enabled: false
-    disabled_reason: HTML search connector does not yet use the stable metadata API
-    poll_interval_minutes: 60
-
-  - id: nl_pastebin_search
-    name: Pastebin Public Archive Search
-    type: html
-    source_layer: primary_raw
-    source_category: paste_site
-    discovery_priority: primary
-    can_create_primary_claim: true
-    can_create_artifact_discovery: true
-    can_create_reference_observation: false
-    base_url: https://pastebin.com
-    poll_url: https://pastebin.com/archive
-    languages:
-      - en
-    connector_config:
-      max_items: 100
-    enabled: false
-    disabled_reason: Public archive endpoint is not reliably parseable or may be blocked
-    poll_interval_minutes: 30
-
-  - id: nl_bbc_cyber_rss
-    name: BBC Technology/Cybersecurity
-    type: rss
-    source_layer: reference_only
-    source_category: mainstream_media
-    discovery_priority: low
-    can_create_primary_claim: false
-    can_create_artifact_discovery: false
-    can_create_reference_observation: true
-    base_url: https://www.bbc.com
-    poll_url: https://feeds.bbci.co.uk/news/technology/rss.xml
-    languages:
-      - en
-    enabled: false
-    disabled_reason: Reference-only source disabled by default
-    poll_interval_minutes: 30
-
-  - id: nl_nrc_rss
-    name: NRC Handelsblad
-    type: rss
-    source_layer: reference_only
-    source_category: mainstream_media
-    discovery_priority: low
-    can_create_primary_claim: false
-    can_create_artifact_discovery: false
-    can_create_reference_observation: true
-    base_url: https://www.nrc.nl
-    poll_url: https://www.nrc.nl/rss/
-    languages:
-      - nl
-    enabled: false
-    disabled_reason: Reference-only source disabled by default
-    poll_interval_minutes: 15
-
-  - id: nl_ad_rss
-    name: AD
-    type: rss
-    source_layer: reference_only
-    source_category: mainstream_media
-    discovery_priority: low
-    can_create_primary_claim: false
-    can_create_artifact_discovery: false
-    can_create_reference_observation: true
-    base_url: https://www.ad.nl
-    poll_url: https://www.ad.nl/rss.xml
-    languages:
-      - nl
-    enabled: false
-    disabled_reason: Reference-only source disabled by default
-    poll_interval_minutes: 15
-
-  - id: nl_volkskrant_rss
-    name: de Volkskrant
-    type: rss
-    source_layer: reference_only
-    source_category: mainstream_media
-    discovery_priority: low
-    can_create_primary_claim: false
-    can_create_artifact_discovery: false
-    can_create_reference_observation: true
-    base_url: https://www.volkskrant.nl
-    poll_url: https://www.volkskrant.nl/nieuws/rss.xml
-    languages:
-      - nl
-    enabled: false
-    disabled_reason: Reference-only source disabled by default
-    poll_interval_minutes: 30
-
-  - id: nl_rtlnieuws_rss
-    name: RTL Nieuws
-    type: rss
-    source_layer: reference_only
-    source_category: mainstream_media
-    discovery_priority: low
-    can_create_primary_claim: false
-    can_create_artifact_discovery: false
-    can_create_reference_observation: true
-    base_url: https://www.rtlnieuws.nl
-    poll_url: https://www.rtlnieuws.nl/rss.xml
-    languages:
-      - nl
-    enabled: false
-    disabled_reason: Reference-only source disabled by default
-    poll_interval_minutes: 15

@@ -26,11 +26,12 @@ def test_nl_pack_active():
     assert len(pack.sources.sources) >= 2
 
 
-def test_nl_sources_have_rss_and_html():
+def test_nl_sources_have_multiple_types():
     pack = load_country_pack("NL")
     types = {s.type for s in pack.sources.sources}
-    assert "rss" in types
-    assert "html" in types
+    assert len(types) >= 2
+    assert "raw_archive" in types
+    assert "github_api" in types or "internet_archive_api" in types
 
 
 def test_pending_population_packs_valid():

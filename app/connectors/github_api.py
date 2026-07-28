@@ -1,13 +1,14 @@
 from datetime import datetime, timezone
 from urllib.parse import quote
 
+import httpx
+
 from app.connectors.base import BaseConnector
 from app.connectors.models import ConnectorResult, DiscoveredItem
 from app.connectors.registry import register_connector
 from app.config import settings
 from app.database.models.source import Source
-
-import httpx
+from app.services.date_provenance import map_github_repository
 
 
 class GitHubAPIConnector(BaseConnector):
@@ -52,24 +53,11 @@ class GitHubAPIConnector(BaseConnector):
                         seen_repos.add(repo_url)
                         full_name = repo.get("full_name", "")
                         description = repo.get("description") or ""
-                        lang = repo.get("language") or ""
                         topics = repo.get("topics") or []
-                        created = repo.get("created_at")
-                        updated = repo.get("updated_at")
-                        pushed = repo.get("pushed_at")
+                        dp = map_github_repository(repo)
 
-                        created_dt = None
-                        if created:
-                            try:
-                                created_dt = datetime.fromisoformat(created.replace("Z", "+00:00"))
-                            except (ValueError, TypeError):
-                                pass
-                        pushed_dt = None
-                        if pushed:
-                            try:
-                                pushed_dt = datetime.fromisoformat(pushed.replace("Z", "+00:00"))
-                            except (ValueError, TypeError):
-                                pass
+                        if not _accept_repository(repo):
+                            continue
 
                         item = DiscoveredItem(
                             source_external_id=source.external_id,
@@ -77,23 +65,27 @@ class GitHubAPIConnector(BaseConnector):
                             title=full_name or repo_url,
                             content=description,
                             content_excerpt=description[:500] if description else None,
-                            published_at=created_dt,
+                            published_at=None,
                             raw_metadata={
                                 "source_role": source.source_role,
                                 "source_category": source.source_category,
                                 "source": "github_api",
-                                "language": lang,
+                                "language": repo.get("language") or "",
                                 "topics": topics,
                                 "description": description,
-                                "source_date_method": "source_api",
-                                "source_date_precision": "exact_datetime",
-                                "source_date_confidence": "high",
-                                "source_created_at": created,
-                                "source_modified_at": updated,
-                                "source_pushed_at": pushed,
                                 "upload_date_method": "repository_metadata",
                                 "upload_date_confidence": "authoritative",
-                                "upload_date_raw": created or "",
+                                "source_date_method": "source_api",
+                                "source_date_precision": dp.precision,
+                                "source_date_confidence": dp.confidence,
+                                "source_date_evidence": dp.evidence,
+                                "source_created_at": str(dp.source_created_at) if dp.source_created_at else None,
+                                "source_modified_at": str(dp.source_modified_at) if dp.source_modified_at else None,
+                                "repository_pushed_at": str(dp.repository_pushed_at) if dp.repository_pushed_at else None,
+                                "repository_size": repo.get("size"),
+                                "fork": repo.get("fork", False),
+                                "archived": repo.get("archived", False),
+                                "default_branch": repo.get("default_branch"),
                             },
                         )
                         result.items.append(item)
@@ -105,6 +97,17 @@ class GitHubAPIConnector(BaseConnector):
         result.success = True
         result.completed_at = datetime.now(timezone.utc)
         return result
+
+
+def _accept_repository(repo: dict) -> bool:
+    if repo.get("fork", False):
+        return False
+    if repo.get("archived", False):
+        return False
+    size = repo.get("size", 0)
+    if size < 10:
+        return False
+    return True
 
 
 register_connector("github_api", GitHubAPIConnector)

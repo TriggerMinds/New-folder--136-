@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     scheduler_timezone: str = Field("UTC", alias="SCHEDULER_TIMEZONE")
     download_artifacts: bool = Field(False, alias="DOWNLOAD_ARTIFACTS")
     github_token: str = Field("", alias="GITHUB_TOKEN")
+    freshness_window_days: int = Field(30, alias="FRESHNESS_WINDOW_DAYS")
 
 
 settings = Settings()
