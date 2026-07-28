@@ -38,9 +38,12 @@ sources:
     connector_config:
       max_items: 200
       search_queries:
-        - Netherlands+leak+OR+classified+OR+documents+OR+database
-        - EU+leak+OR+classified+OR+documents+OR+dataset
-        - European+Commission+leak+OR+classified+OR+documents
+        - Netherlands+leak+OR+classified+OR+documents+OR+database+OR+dataset+OR+confidential
+        - Netherlands+AND+(dump+OR+breach+OR+emails+OR+mailbox+OR+export)
+        - EU+AND+(leak+OR+classified+OR+documents+OR+dataset+OR+confidential+OR+dump+OR+emails)
+        - European+Commission+AND+(leak+OR+classified+OR+documents+OR+dump+OR+dataset)
+        - Dutch+government+AND+(leak+OR+classified+OR+documents+OR+dump+OR+dataset)
+        - Dutch+AND+(data+breach+OR+database+dump+OR+security+incident)
     enabled: true
     poll_interval_minutes: 30
 

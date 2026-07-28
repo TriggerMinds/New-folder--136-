@@ -27,7 +27,8 @@ def _classify(url: str, metadata: dict) -> tuple:
     path = parsed.path.rstrip("/")
     fname = path.split("/")[-1] if path else ""
     _, file_ext = fname.rsplit(".", 1) if "." in fname else ("", "")
-    file_ext = "." + file_ext.lower() if file_ext else ext
+    file_ext_candidate = "." + file_ext.lower() if file_ext else ext
+    file_ext = file_ext_candidate if file_ext_candidate in ARCHIVE_EXTS else ""
     tmap = {".pdf": "document", ".doc": "document", ".docx": "document",
             ".xls": "dataset", ".xlsx": "dataset", ".csv": "dataset", ".json": "dataset", ".xml": "dataset",
             ".zip": "archive_file", ".7z": "archive_file", ".tar": "archive_file", ".gz": "archive_file",

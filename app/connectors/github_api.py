@@ -34,7 +34,8 @@ class GitHubAPIConnector(BaseConnector):
             for query in queries:
                 if len(result.items) >= cfg.get("max_items", 100):
                     break
-                url = f"https://api.github.com/search/repositories?q={quote(query)}&sort=updated&per_page=50"
+                clean_query = query.replace("+", " ")
+                url = f"https://api.github.com/search/repositories?q={quote(clean_query)}&sort=updated&per_page=50"
                 try:
                     resp = await client.get(url, headers=headers)
                     result.http_status = resp.status_code
