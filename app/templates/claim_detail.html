@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ claim.title_original }}</h1>
+
+<div class="claim-detail">
+    <section>
+        <h2>Metadata</h2>
+        <table>
+            <tr><td>ID</td><td><code>{{ claim.id }}</code></td></tr>
+            <tr><td>Record Type</td><td>{{ claim.record_type }}</td></tr>
+            <tr><td>Eerste observatie</td><td>{{ claim.first_observed_at }}</td></tr>
+            <tr><td>Laatste observatie</td><td>{{ claim.last_observed_at }}</td></tr>
+            <tr><td>Taal</td><td>{{ claim.source_language or '—' }}</td></tr>
+            <tr><td>Landen</td><td>{{ claim.countries | join(', ') }}</td></tr>
+            <tr><td>Dossiers</td><td>{{ claim.dossiers | join(', ') or '—' }}</td></tr>
+        </table>
+    </section>
+
+    <section>
+        <h2>Inhoud</h2>
+        {% if claim.summary %}
+            <h3>Samenvatting</h3>
+            <p>{{ claim.summary }}</p>
+        {% endif %}
+        {% if claim.claim_text %}
+            <h3>Claim tekst</h3>
+            <blockquote>{{ claim.claim_text }}</blockquote>
+        {% endif %}
+        {% if claim.title_translated %}
+            <h3>Vertaling</h3>
+            <p>{{ claim.title_translated }}</p>
+        {% endif %}
+    </section>
+
+    <section>
+        <h2>Status</h2>
+        <table>
+            <tr><td>Authenticiteit</td><td><span class="tag auth-{{ claim.authenticity_status.value }}">{{ claim.authenticity_status.value }}</span></td></tr>
+            <tr><td>Provenance</td><td><span class="tag">{{ claim.provenance_status.value }}</span></td></tr>
+            <tr><td>Toegang</td><td>{{ claim.content_access_status.value }}</td></tr>
+            <tr><td>AI Enrichment</td><td><span class="tag ai-{{ claim.ai_enrichment_status.value }}">{{ claim.ai_enrichment_status.value }}</span></td></tr>
+        </table>
+    </section>
+
+    <section>
+        <h2>URL's</h2>
+        <table>
+            <tr><td>Eerste observatie</td><td><a href="{{ claim.first_observed_url }}" target="_blank">{{ claim.first_observed_url }}</a></td></tr>
+            {% if claim.earliest_known_public_url %}
+                <tr><td>Eerst bekend publiek</td><td><a href="{{ claim.earliest_known_public_url }}" target="_blank">{{ claim.earliest_known_public_url }}</a></td></tr>
+            {% endif %}
+            {% if claim.claimed_origin_url %}
+                <tr><td>Geclaimde oorsprong</td><td><a href="{{ claim.claimed_origin_url }}" target="_blank">{{ claim.claimed_origin_url }}</a></td></tr>
+            {% endif %}
+            {% if claim.confirmed_origin_url %}
+                <tr><td>Bevestigde oorsprong</td><td><a href="{{ claim.confirmed_origin_url }}" target="_blank">{{ claim.confirmed_origin_url }}</a></td></tr>
+            {% endif %}
+        </table>
+    </section>
+
+    <section>
+        <h2>Entiteiten</h2>
+        <h3>EU</h3>
+        <ul>{% for e in claim.eu_entities %}<li>{{ e }}</li>{% else %}<li>Geen</li>{% endfor %}</ul>
+        <h3>Nationaal</h3>
+        <ul>{% for e in claim.national_entities %}<li>{{ e }}</li>{% else %}<li>Geen</li>{% endfor %}</ul>
+    </section>
+
+    <section>
+        <h2>Observaties ({{ observations | length }})</h2>
+        {% if observations %}
+        <table>
+            <thead>
+                <tr><th>Datum</th><th>URL</th><th>Host</th><th>Status</th><th>Methode</th></tr>
+            </thead>
+            <tbody>
+            {% for obs in observations %}
+                <tr>
+                    <td>{{ obs.observed_at }}</td>
+                    <td><a href="{{ obs.url }}" target="_blank">{{ obs.url | truncate(60) }}</a></td>
+                    <td>{{ obs.host }}</td>
+                    <td>{{ obs.http_status or '—' }}</td>
+                    <td>{{ obs.discovery_method }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p>Geen observaties.</p>
+        {% endif %}
+    </section>
+
+    <section>
+        <h2>Audit Events ({{ audit_events | length }})</h2>
+        {% if audit_events %}
+        <table>
+            <thead>
+                <tr><th>Tijdstip</th><th>Type</th><th>Actor</th><th>Reden</th></tr>
+            </thead>
+            <tbody>
+            {% for event in audit_events %}
+                <tr>
+                    <td>{{ event.timestamp }}</td>
+                    <td>{{ event.event_type }}</td>
+                    <td>{{ event.actor }}</td>
+                    <td>{{ event.reason or '—' }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p>Geen audit events.</p>
+        {% endif %}
+    </section>
+</div>
+
+<p><a href="/">&larr; Terug naar Raw Feed</a></p>
+{% endblock %}

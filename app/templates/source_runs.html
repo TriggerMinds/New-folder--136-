@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Source Runs</h1>
+<p class="subtitle">Uitgevoerde broncontroles</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Bron</th>
+            <th>Start</th>
+            <th>Einde</th>
+            <th>Succes</th>
+            <th>Items</th>
+            <th>Matches</th>
+            <th>Nieuwe claims</th>
+            <th>Dedup</th>
+            <th>Fout</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for run in runs %}
+        <tr>
+            <td>{{ run.source_id | string | truncate(8) }}</td>
+            <td>{{ run.started_at }}</td>
+            <td>{{ run.completed_at or '—' }}</td>
+            <td>{{ 'Ja' if run.success else 'Nee' }}</td>
+            <td>{{ run.items_seen }}</td>
+            <td>{{ run.items_matched }}</td>
+            <td>{{ run.claims_created }}</td>
+            <td>{{ run.claims_deduplicated }}</td>
+            <td>{{ run.error or '—' }}</td>
+        </tr>
+    {% else %}
+        <tr><td colspan="9">Geen source runs gevonden.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

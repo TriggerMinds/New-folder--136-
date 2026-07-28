@@ -1,0 +1,12 @@
+country_code: NL
+status: active
+languages:
+  - code: nl
+    name: Nederlands
+    primary: true
+  - code: en
+    name: English
+    primary: false
+  - code: fy
+    name: Frysk
+    primary: false

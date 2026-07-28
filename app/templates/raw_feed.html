@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Raw Feed</h1>
+<p class="subtitle">Chronologische weergave van alle observed_leak_claims — {{ total }} totaal</p>
+
+<form class="filters" method="get" action="/">
+    <input type="text" name="country" placeholder="Land (NL, DE, FR...)" value="{{ country }}">
+    <input type="text" name="language" placeholder="Taal (nl, de, fr...)" value="{{ language }}">
+    <input type="text" name="host" placeholder="Host (example.com)" value="{{ host }}">
+    <input type="text" name="dossier" placeholder="Dossier" value="{{ dossier }}">
+    <input type="text" name="date_from" placeholder="Vanaf (YYYY-MM-DD)" value="{{ date_from }}">
+    <input type="text" name="date_to" placeholder="Tot (YYYY-MM-DD)" value="{{ date_to }}">
+    <button type="submit">Filter</button>
+    <a href="/" class="clear">Wissen</a>
+</form>
+
+<div class="pagination">
+    <span>Pagina {{ offset // limit + 1 }}</span>
+    {% if offset > 0 %}
+        <a href="/?limit={{ limit }}&offset={{ offset - limit }}&country={{ country }}&language={{ language }}&host={{ host }}&dossier={{ dossier }}&date_from={{ date_from }}&date_to={{ date_to }}">Vorig</a>
+    {% endif %}
+    {% if offset + limit < total %}
+        <a href="/?limit={{ limit }}&offset={{ offset + limit }}&country={{ country }}&language={{ language }}&host={{ host }}&dossier={{ dossier }}&date_from={{ date_from }}&date_to={{ date_to }}">Volgend</a>
+    {% endif %}
+</div>
+
+<div class="claim-list">
+{% for claim in claims %}
+    <div class="claim-card">
+        <h2><a href="/claims/{{ claim.id }}">{{ claim.title_original }}</a></h2>
+        <div class="meta">
+            <span class="date">{{ claim.first_observed_at }}</span>
+            {% if claim.source_language %}
+                <span class="lang">{{ claim.source_language }}</span>
+            {% endif %}
+            {% for c in claim.countries %}
+                <span class="country">{{ c }}</span>
+            {% endfor %}
+            <span class="host">{{ claim.first_observed_host }}</span>
+            {% for d in claim.dossiers %}
+                <span class="dossier">{{ d }}</span>
+            {% endfor %}
+        </div>
+        <div class="status">
+            <span class="tag auth-{{ claim.authenticity_status.value }}">{{ claim.authenticity_status.value }}</span>
+            <span class="tag ai-{{ claim.ai_enrichment_status.value }}">{{ claim.ai_enrichment_status.value }}</span>
+        </div>
+    </div>
+{% else %}
+    <p class="empty">Geen claims gevonden.</p>
+{% endfor %}
+</div>
+{% endblock %}

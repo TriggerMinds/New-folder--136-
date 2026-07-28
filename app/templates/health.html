@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>System Health</h1>
+<div id="health-status">
+    <p>Laden...</p>
+</div>
+<script>
+fetch('/health')
+    .then(r => r.json())
+    .then(data => {
+        const div = document.getElementById('health-status');
+        const statusClass = data.status === 'healthy' ? 'healthy' : 'degraded';
+        div.innerHTML = `
+            <h2 class="${statusClass}">${data.status.toUpperCase()}</h2>
+            <table>
+                <tr><td>Database</td><td>${data.database}</td></tr>
+                <tr><td>Omgeving</td><td>${data.app_env}</td></tr>
+            </table>
+        `;
+    })
+    .catch(err => {
+        document.getElementById('health-status').innerHTML = `<h2 class="degraded">OFFLINE</h2><p>${err}</p>`;
+    });
+</script>
+{% endblock %}

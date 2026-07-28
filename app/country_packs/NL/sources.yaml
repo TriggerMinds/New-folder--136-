@@ -1,0 +1,39 @@
+country_code: NL
+status: active
+sources:
+  - id: nl_nu_nl_rss
+    name: NU.nl Laatste Nieuws
+    type: rss
+    base_url: https://www.nu.nl
+    poll_url: https://feeds.nu.nl/nu/algemeen
+    languages:
+      - nl
+    enabled: true
+    poll_interval_minutes: 15
+  - id: nl_nos_rss
+    name: NOS Laatste Nieuws
+    type: rss
+    base_url: https://nos.nl
+    poll_url: https://feeds.nos.nl/nosnieuws/algemeen
+    languages:
+      - nl
+    enabled: true
+    poll_interval_minutes: 15
+  - id: nl_rijksoverheid_actueel
+    name: Rijksoverheid Actueel
+    type: rss
+    base_url: https://www.rijksoverheid.nl
+    poll_url: https://www.rijksoverheid.nl/onderwerpen.rss
+    languages:
+      - nl
+    enabled: true
+    poll_interval_minutes: 30
+  - id: nl_tweedekamer_rss
+    name: Tweede Kamer Nieuws
+    type: rss
+    base_url: https://www.tweedekamer.nl
+    poll_url: https://www.tweedekamer.nl/nieuws/rss.xml
+    languages:
+      - nl
+    enabled: true
+    poll_interval_minutes: 30

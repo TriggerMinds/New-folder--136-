@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Bronnen</h1>
+<p class="subtitle">Alle gesynchroniseerde bronnen</p>
+
+<form method="post" action="/sources/run" style="margin-bottom:1rem;">
+    <button type="submit" class="btn">Alle bronnen uitvoeren</button>
+</form>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Naam</th>
+            <th>Land</th>
+            <th>Type</th>
+            <th>Ingeschakeld</th>
+            <th>Laatste controle</th>
+            <th>Laatste succes</th>
+            <th>Fouten</th>
+            <th>Actie</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for src in sources %}
+        <tr>
+            <td>{{ src.external_id }}</td>
+            <td>{{ src.name }}</td>
+            <td>{{ src.country_code }}</td>
+            <td>{{ src.source_type }}</td>
+            <td>{{ 'Ja' if src.enabled else 'Nee' }}</td>
+            <td>{{ src.last_checked_at or '—' }}</td>
+            <td>{{ src.last_success_at or '—' }}</td>
+            <td>
+                {% if src.last_error %}
+                    <span class="tag auth-confirmed_fabricated">{{ src.consecutive_failures }}x</span>
+                {% else %}
+                    —
+                {% endif %}
+            </td>
+            <td>
+                <form method="post" action="/sources/{{ src.id }}/run" style="display:inline;">
+                    <button type="submit" class="btn-small">Run</button>
+                </form>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

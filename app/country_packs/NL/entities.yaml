@@ -1,0 +1,53 @@
+country_code: NL
+status: active
+entities:
+  - canonical_name: Tweede Kamer der Staten-Generaal
+    entity_type: national_parliament
+    aliases:
+      - Tweede Kamer
+      - Eerste Kamer
+    domains:
+      - tweedekamer.nl
+  - canonical_name: Ministerie van Justitie en Veiligheid
+    entity_type: government_ministry
+    aliases:
+      - Ministerie van Justitie
+      - JenV
+    domains:
+      - jenV.nl
+  - canonical_name: Autoriteit Persoonsgegevens
+    entity_type: regulatory_body
+    aliases:
+      - AP
+    domains:
+      - autoriteitpersoonsgegevens.nl
+  - canonical_name: Algemene Inlichtingen- en Veiligheidsdienst
+    entity_type: intelligence_service
+    aliases:
+      - AIVD
+    domains:
+      - aivd.nl
+  - canonical_name: Nationale Politie
+    entity_type: law_enforcement
+    aliases:
+      - Politie
+    domains:
+      - politie.nl
+  - canonical_name: Rijksoverheid
+    entity_type: government
+    aliases:
+      - Rijk
+    domains:
+      - rijksoverheid.nl
+  - canonical_name: Europese Commissie
+    entity_type: eu_institution
+    aliases:
+      - EC
+    domains:
+      - ec.europa.eu
+  - canonical_name: Europees Parlement
+    entity_type: eu_institution
+    aliases:
+      - EP
+    domains:
+      - europarl.europa.eu
