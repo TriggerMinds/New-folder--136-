@@ -1,6 +1,7 @@
 import asyncio
 import os
 import sys
+import uuid
 from collections.abc import AsyncGenerator
 
 import pytest
@@ -65,6 +66,11 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 """
+
+
+@pytest.fixture
+def test_source_id() -> uuid.UUID:
+    return uuid.uuid4()
 
 
 @pytest_asyncio.fixture(scope="function")

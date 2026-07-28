@@ -81,10 +81,11 @@ def match_entities(title: str | None, description: str | None, filename: str | N
     for pattern, code in COUNTRY_MAP:
         if pattern.search(combined):
             countries.add(code)
-    if locator:
-        for suffix, code in HOST_COUNTRY.items():
-            if suffix in locator.lower():
-                countries.add(code)
+    for field in [locator, combined]:
+        if field:
+            for suffix, code in HOST_COUNTRY.items():
+                if suffix in field.lower():
+                    countries.add(code)
 
     eu_entities = set()
     for search_name, canonical_name in EU_ENTITIES:
