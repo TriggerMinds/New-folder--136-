@@ -36,6 +36,7 @@ sources:
     connector_config:
       max_items: 100
     enabled: false
+    disabled_reason: HTML search connector is not operational and produced no validated artifacts
     poll_interval_minutes: 30
 
   - id: nl_archive_org_eu_data
@@ -54,6 +55,7 @@ sources:
     connector_config:
       max_items: 100
     enabled: false
+    disabled_reason: HTML search connector does not yet use the stable metadata API
     poll_interval_minutes: 60
 
   - id: nl_pastebin_search
@@ -72,6 +74,7 @@ sources:
     connector_config:
       max_items: 100
     enabled: false
+    disabled_reason: Public archive endpoint is not reliably parseable or may be blocked
     poll_interval_minutes: 30
 
   - id: nl_bbc_cyber_rss
@@ -88,6 +91,7 @@ sources:
     languages:
       - en
     enabled: false
+    disabled_reason: Reference-only source disabled by default
     poll_interval_minutes: 30
 
   - id: nl_nrc_rss
@@ -104,6 +108,7 @@ sources:
     languages:
       - nl
     enabled: false
+    disabled_reason: Reference-only source disabled by default
     poll_interval_minutes: 15
 
   - id: nl_ad_rss
@@ -120,6 +125,7 @@ sources:
     languages:
       - nl
     enabled: false
+    disabled_reason: Reference-only source disabled by default
     poll_interval_minutes: 15
 
   - id: nl_volkskrant_rss
@@ -136,6 +142,7 @@ sources:
     languages:
       - nl
     enabled: false
+    disabled_reason: Reference-only source disabled by default
     poll_interval_minutes: 30
 
   - id: nl_rtlnieuws_rss
@@ -152,4 +159,5 @@ sources:
     languages:
       - nl
     enabled: false
+    disabled_reason: Reference-only source disabled by default
     poll_interval_minutes: 15

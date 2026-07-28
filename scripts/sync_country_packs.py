@@ -18,7 +18,9 @@ async def main() -> None:
             await session.commit()
             print(f"Aangemaakt: {result.created}")
             print(f"Bijgewerkt: {result.updated}")
-            print(f"Uitgeschakeld: {result.disabled}")
+            print(f"Geactiveerd: {result.activated}")
+            print(f"Gedeactiveerd: {result.deactivated}")
+            print(f"Historisch: {result.marked_historical}")
             print(f"Ongewijzigd: {result.unchanged}")
         except Exception as e:
             await session.rollback()

@@ -14,7 +14,10 @@ class SourceSyncResult:
     def __init__(self):
         self.created: int = 0
         self.updated: int = 0
-        self.disabled: int = 0
+        self.activated: int = 0
+        self.deactivated: int = 0
+        self.marked_historical: int = 0
+        self.marked_inactive: int = 0
         self.unchanged: int = 0
 
 
@@ -27,6 +30,7 @@ async def sync_country_packs_to_database(session: AsyncSession) -> SourceSyncRes
     existing = await session.execute(select(Source))
     existing_sources = {s.external_id: s for s in existing.scalars().all()}
     synced_external_ids: set[str] = set()
+    now = datetime.now(timezone.utc)
 
     for pack in active_packs:
         if not pack.sources or not pack.sources.sources:
@@ -37,13 +41,18 @@ async def sync_country_packs_to_database(session: AsyncSession) -> SourceSyncRes
             connector_config["base_url"] = src_def.base_url
             connector_config["poll_url"] = src_def.poll_url
             connector_config["languages"] = src_def.languages
+
+            src_layer = getattr(src_def, "source_layer", "reference_only")
+            can_discover = getattr(src_def, "can_create_artifact_discovery", False)
+            can_ref = getattr(src_def, "can_create_reference_observation", True)
+            yaml_enabled = src_def.enabled
+            d_reason = getattr(src_def, "disabled_reason", None)
+
             existing_src = existing_sources.get(src_def.id)
             if existing_src:
                 cc_str = str(connector_config)
                 existing_cc_str = str(existing_src.connector_config)
-                src_layer = getattr(src_def, 'source_layer', 'reference_only')
-                can_discover = getattr(src_def, 'can_create_artifact_discovery', False)
-                can_ref = getattr(src_def, 'can_create_reference_observation', True)
+                was_enabled = existing_src.enabled
                 needs_update = (
                     existing_src.name != src_def.name
                     or existing_src.country_code != pack.country_code
@@ -58,6 +67,7 @@ async def sync_country_packs_to_database(session: AsyncSession) -> SourceSyncRes
                     or existing_src.base_url != src_def.base_url
                     or existing_src.poll_url != src_def.poll_url
                     or existing_src.poll_interval_minutes != src_def.poll_interval_minutes
+                    or existing_src.enabled != yaml_enabled
                     or cc_str != existing_cc_str
                 )
                 if needs_update:
@@ -78,74 +88,53 @@ async def sync_country_packs_to_database(session: AsyncSession) -> SourceSyncRes
                     existing_src.connector_config = connector_config
                     existing_src.country_pack_version = SYNC_VERSION
                     existing_src.present_in_country_pack = True
-                    existing_src.last_synced_at = datetime.now(timezone.utc)
-                    existing_src.lifecycle_status = "active" if existing_src.enabled else "inactive"
-                    d_reason = getattr(src_def, 'disabled_reason', None)
+                    existing_src.last_synced_at = now
+                    existing_src.enabled = yaml_enabled
                     if d_reason:
                         existing_src.disabled_reason = d_reason
+                    else:
+                        existing_src.disabled_reason = None
+                    existing_src.lifecycle_status = "active" if yaml_enabled else "inactive"
                     session.add(existing_src)
                     result.updated += 1
+                    if yaml_enabled and not was_enabled:
+                        result.activated += 1
+                    if not yaml_enabled and was_enabled:
+                        result.deactivated += 1
                 else:
+                    existing_src.present_in_country_pack = True
+                    existing_src.last_synced_at = now
+                    existing_src.lifecycle_status = "active" if yaml_enabled else "inactive"
                     result.unchanged += 1
             else:
-                src_layer = getattr(src_def, 'source_layer', 'reference_only')
-                can_discover = getattr(src_def, 'can_create_artifact_discovery', False)
-                can_ref = getattr(src_def, 'can_create_reference_observation', True)
                 src = Source(
-                    external_id=src_def.id,
-                    name=src_def.name,
-                    country_code=pack.country_code,
-                    languages=src_def.languages,
-                    source_type=src_def.type,
-                    source_layer=src_layer,
-                    source_role=src_def.source_role,
-                    source_category=src_def.source_category,
+                    external_id=src_def.id, name=src_def.name,
+                    country_code=pack.country_code, languages=src_def.languages,
+                    source_type=src_def.type, source_layer=src_layer,
+                    source_role=src_def.source_role, source_category=src_def.source_category,
                     can_create_primary_claim=src_def.can_create_primary_claim,
                     can_create_artifact_discovery=can_discover,
                     can_create_reference_observation=can_ref,
                     discovery_priority=src_def.discovery_priority,
-                    base_url=src_def.base_url,
-                    poll_url=src_def.poll_url,
-                    enabled=src_def.enabled,
-                    poll_interval_minutes=src_def.poll_interval_minutes,
-                    connector_config=connector_config,
-                    country_pack_version=SYNC_VERSION,
+                    base_url=src_def.base_url, poll_url=src_def.poll_url,
+                    enabled=yaml_enabled, poll_interval_minutes=src_def.poll_interval_minutes,
+                    connector_config=connector_config, country_pack_version=SYNC_VERSION,
+                    present_in_country_pack=True, last_synced_at=now,
+                    lifecycle_status="active" if yaml_enabled else "inactive",
+                    disabled_reason=d_reason,
                 )
                 session.add(src)
                 result.created += 1
 
-    from datetime import datetime, timezone
-    now = datetime.now(timezone.utc)
-
     for ext_id, existing_src in existing_sources.items():
-        existing_src.present_in_country_pack = ext_id in synced_external_ids
-        existing_src.last_synced_at = now
-
-        if ext_id in synced_external_ids:
-            if existing_src.enabled:
-                existing_src.lifecycle_status = "active"
-            else:
-                existing_src.lifecycle_status = "inactive"
-        else:
+        was_enabled = existing_src.enabled
+        if ext_id not in synced_external_ids:
             existing_src.enabled = False
             existing_src.present_in_country_pack = False
+            existing_src.last_synced_at = now
             existing_src.lifecycle_status = "historical"
-
-            if ext_id not in synced_external_ids and existing_src.enabled:
-                result.disabled += 1
-
-    for new_ext_id in synced_external_ids:
-        if new_ext_id in existing_sources:
-            src = existing_sources[new_ext_id]
-            src.present_in_country_pack = True
-            src.last_synced_at = now
-            if src.enabled:
-                src.lifecycle_status = "active"
-            else:
-                disabled_reason = getattr(next((s for pack in active_packs if pack.sources for s in pack.sources.sources if s.id == new_ext_id), None), 'disabled_reason', None)
-                if disabled_reason:
-                    src.disabled_reason = disabled_reason
-                src.lifecycle_status = "inactive"
+            if was_enabled:
+                result.marked_historical += 1
 
     await session.flush()
     return result
