@@ -9,6 +9,7 @@ from app.connectors.registry import register_connector
 from app.config import settings
 from app.database.models.source import Source
 from app.services.date_provenance import map_documentcloud_document
+from app.services.documentcloud_artifact_validation import classify_document
 
 
 class DocumentCloudAPIConnector(BaseConnector):
@@ -62,6 +63,13 @@ class DocumentCloudAPIConnector(BaseConnector):
                             title = doc.get("title") or f"Document {doc_id}"
                             canonical_url = doc.get("canonical_url") or f"https://www.documentcloud.org/documents/{doc_id}/"
                             dp = map_documentcloud_document(doc)
+
+                            cl = classify_document(title, doc.get("description", ""), doc.get("organization", ""), access)
+                            if not cl.accepted or cl.classification == "irrelevant":
+                                result.rejected_candidates += 1
+                                result.rejection_reasons.append(cl.rejection_reason or cl.classification)
+                                continue
+
                             item = DiscoveredItem(
                                 source_external_id=source.external_id,
                                 url=canonical_url,
@@ -92,6 +100,10 @@ class DocumentCloudAPIConnector(BaseConnector):
                                     "source_created_at": str(dp.source_created_at) if dp.source_created_at else None,
                                     "source_modified_at": str(dp.source_modified_at) if dp.source_modified_at else None,
                                     "source_uploaded_at": str(dp.source_uploaded_at) if dp.source_uploaded_at else None,
+                                    "document_classification": cl.classification,
+                                    "classification_confidence": cl.confidence,
+                                    "matched_signals": cl.matched_signals,
+                                    "review_required": cl.review_required,
                                 },
                             )
                             result.items.append(item)

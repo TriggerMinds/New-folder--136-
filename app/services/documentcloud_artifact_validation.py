@@ -1,102 +1,114 @@
-from dataclasses import dataclass
+import re
+import unicodedata
+from dataclasses import dataclass, field
 
 
 @dataclass
 class DocumentCloudValidationResult:
-    accepted: bool = False
-    classification: str = "irrelevant"
-    confidence: str = "low"
-    matched_signals: list[str] = None
-    rejection_reason: str = ""
+    accepted: bool
+    classification: str
+    confidence: str
+    matched_signals: list[str] = field(default_factory=list)
+    rejection_reason: str | None = None
     review_required: bool = False
 
 
-LEAK_SIGNALS = [
-    "confidential", "internal", "non-public", "restricted", "classified",
-    "leaked", "leak", "unauthorized", "sensitive", "secret",
-]
+# Word-boundary patterns for safe matching
+_SECRET = re.compile(r"\bsecret\b", re.I)
+_CLASSIFIED = re.compile(r"\bclassified\b", re.I)
+_CONFIDENTIAL = re.compile(r"\bconfidential\b", re.I)
+_INTERNAL = re.compile(r"\binternal\b", re.I)
+_RESTRICTED = re.compile(r"\brestricted\b", re.I)
+_LEAKED = re.compile(r"\bleaked\b", re.I)
+_UNAUTHORIZED = re.compile(r"\bunauthorized\b", re.I)
+_SENSITIVE = re.compile(r"\bsensitive\b", re.I)
+_NON_PUBLIC = re.compile(r"\bnon.?public\b", re.I)
 
-INSTITUTION_SIGNALS = [
-    "commission", "parliament", "ministry", "department", "authority",
-    "agency", "government", "council", "court", "tribunal",
-]
+_LEAK_SIGNALS = [_SECRET, _CLASSIFIED, _CONFIDENTIAL, _INTERNAL, _RESTRICTED, _LEAKED, _UNAUTHORIZED, _SENSITIVE, _NON_PUBLIC]
 
-DOCUMENT_TYPES = [
-    "memo", "memorandum", "email", "correspondence", "exhibit",
-    "report", "investigation", "briefing", "note", "minutes",
-]
+_INSTITUTION = re.compile(r"\b(commission|parliament|ministry|department|authority|agency|government|council|court|tribunal|committee|directorate)\b", re.I)
+_INVESTIGATION = re.compile(r"\binvestigation\b", re.I)
+_REGULATORY = re.compile(r"\b(regulation|compliance|procurement|oversight)\b", re.I)
+_COURT = re.compile(r"\b(court|trial|lawsuit|indictment|verdict|affidavit|deposition|subpoena)\b", re.I)
+_MEMO = re.compile(r"\b(memo|memorandum|correspondence|email|briefing|minutes|note|directive)\b", re.I)
+_EXHIBIT = re.compile(r"\bexhibit\b", re.I)
+_NEWS = re.compile(r"\b(article|news|press.release|journalist|reporter|newspaper)\b", re.I)
+_LEAK = re.compile(r"\bleak\b", re.I)
 
 
-def classify_document(title: str, description: str, organization: str, access: str) -> DocumentCloudValidationResult:
+def _norm(text: str | None) -> str:
+    if text is None:
+        return ""
+    if not isinstance(text, str):
+        text = str(text)
+    return unicodedata.normalize("NFKC", text)
+
+
+def classify_document(title: str | None, description: str | None, organization: str | None, access: str) -> DocumentCloudValidationResult:
     if access != "public":
         return DocumentCloudValidationResult(accepted=False, rejection_reason=f"non-public access: {access}")
 
-    combined = (title or "") + " " + (description or "") + " " + (organization or "")
-    combined_lower = combined.lower()
+    t = _norm(title)
+    d = _norm(description)
+    o = _norm(organization)
+    combined = f"{t} {d} {o}"
 
     matched_signals = []
-    for signal in LEAK_SIGNALS:
-        if signal in combined_lower:
-            matched_signals.append(signal)
+    for pat in _LEAK_SIGNALS:
+        if pat.search(combined):
+            matched_signals.append(pat.pattern.strip("\\b").strip("(?i)").lower().replace("\\b", ""))
 
-    inst_matches = [s for s in INSTITUTION_SIGNALS if s in combined_lower]
-    doc_matches = [s for s in DOCUMENT_TYPES if s in combined_lower]
+    has_exhibit = bool(_EXHIBIT.search(combined))
+    has_memo = bool(_MEMO.search(combined))
+    has_institution = bool(_INSTITUTION.search(combined))
+    has_investigation = bool(_INVESTIGATION.search(combined))
+    has_regulatory = bool(_REGULATORY.search(combined))
+    has_court = bool(_COURT.search(combined))
+    is_news = bool(_NEWS.search(combined))
+    has_leak = bool(_LEAK.search(combined))
+    has_any_signal = bool(matched_signals)
+    has_meaningful = bool(t and (has_institution or has_investigation or has_court or has_regulatory or has_memo))
 
-    is_public_doc = bool(organization and title)
-    is_investigation = "investigation" in combined_lower or "exhibit" in combined_lower
-    is_regulatory = "regulation" in combined_lower or "compliance" in combined_lower or "procurement" in combined_lower
-    is_court = "court" in combined_lower or "trial" in combined_lower or "lawsuit" in combined_lower
-    is_memo = "memo" in combined_lower or "correspondence" in combined_lower or "email" in combined_lower
-    is_internal = any(s in combined_lower for s in ["internal", "confidential", "classified", "restricted"])
-    is_news = "article" in combined_lower or "news" in combined_lower or "press release" in combined_lower
+    # A. Non-public already rejected above
 
-    result = DocumentCloudValidationResult(accepted=True)
+    # B. News/press → reference_only
+    if is_news and not (has_any_signal and has_meaningful):
+        return DocumentCloudValidationResult(accepted=True, classification="reference_only", confidence="high",
+                                            matched_signals=matched_signals)
 
-    if is_internal and doc_matches and (inst_matches or is_investigation):
-        result.classification = "probable_leak_document"
-        result.confidence = "high" if (len(matched_signals) >= 2 and inst_matches) else "medium"
-        result.matched_signals = matched_signals + doc_matches + inst_matches
-        result.review_required = True
-        return result
+    # C. Sensitive ambiguity
+    if has_any_signal and not has_meaningful and not has_institution:
+        return DocumentCloudValidationResult(accepted=True, classification="sensitive_review_required", confidence="low",
+                                            matched_signals=matched_signals, review_required=True)
 
-    if is_court and title and organization:
-        result.classification = "court_record"
-        result.confidence = "high"
-        result.matched_signals = matched_signals
-        return result
+    # D. Strong leak candidate: leak signal + meaningful context
+    if has_any_signal and has_meaningful:
+        confidence = "high" if (has_leak or has_exhibit) else "medium"
+        return DocumentCloudValidationResult(accepted=True, classification="probable_leak_document", confidence=confidence,
+                                            matched_signals=matched_signals, review_required=True)
 
-    if is_investigation and title:
-        result.classification = "investigation_document"
-        result.confidence = "medium"
-        result.matched_signals = matched_signals
-        return result
+    # E. Court/regulatory/investigation/correspondence/public record
+    if has_court and t:
+        return DocumentCloudValidationResult(accepted=True, classification="court_record", confidence="high",
+                                            matched_signals=matched_signals)
+    if has_investigation and t:
+        return DocumentCloudValidationResult(accepted=True, classification="investigation_document", confidence="medium",
+                                            matched_signals=matched_signals)
+    if has_regulatory and t:
+        return DocumentCloudValidationResult(accepted=True, classification="regulatory_document", confidence="medium",
+                                            matched_signals=matched_signals)
+    if has_memo and t:
+        return DocumentCloudValidationResult(accepted=True, classification="correspondence", confidence="medium",
+                                            matched_signals=matched_signals)
 
-    if is_regulatory and title:
-        result.classification = "regulatory_document"
-        result.confidence = "medium"
-        result.matched_signals = matched_signals
-        return result
+    # F. Public document with organization context
+    if t and o:
+        return DocumentCloudValidationResult(accepted=True, classification="primary_public_document", confidence="high",
+                                            matched_signals=matched_signals)
 
-    if is_memo and title:
-        result.classification = "correspondence"
-        result.confidence = "medium"
-        result.matched_signals = matched_signals
-        return result
+    # G. Minimal public document
+    if t:
+        return DocumentCloudValidationResult(accepted=True, classification="primary_public_document", confidence="low",
+                                            matched_signals=matched_signals)
 
-    if is_public_doc:
-        result.classification = "primary_public_document"
-        result.confidence = "high"
-        result.matched_signals = matched_signals
-        return result
-
-    if is_news:
-        result.classification = "reference_only"
-        result.confidence = "low"
-        result.matched_signals = matched_signals
-        return result
-
-    result.classification = "irrelevant"
-    result.confidence = "low"
-    result.accepted = False
-    result.rejection_reason = "matched no relevant classification signals"
-    return result
+    return DocumentCloudValidationResult(accepted=False, classification="irrelevant", rejection_reason="insufficient metadata")
