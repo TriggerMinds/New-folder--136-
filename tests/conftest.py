@@ -18,6 +18,11 @@ from app.database.models import (
     Source,
     AuditEvent,
     SourceRun,
+    SourceSignal,
+    ArtifactDiscovery,
+    DistributionObservation,
+    ReferenceObservation,
+    ArtifactAcquisition,
 )
 
 TEST_DATABASE_URL = os.environ.get(

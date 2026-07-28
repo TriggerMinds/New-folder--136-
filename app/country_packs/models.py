@@ -155,7 +155,7 @@ class SourceDef(BaseModel):
     @field_validator("source_category")
     @classmethod
     def valid_category(cls, v: str) -> str:
-        allowed = {"leak_archive", "document_archive", "dataset_index", "git_host", "file_host", "torrent_index", "ipfs_index", "public_channel", "paste_site", "web_archive", "whistleblower_platform", "specialist_blog", "mainstream_media", "government", "parliament"}
+        allowed = {"leak_archive", "document_archive", "dataset_index", "git_host", "file_host", "torrent_index", "ipfs_index", "public_channel", "paste_site", "web_archive", "whistleblower_platform", "specialist_blog", "mainstream_media", "government", "parliament", "raw_leak_archive", "user_upload_archive", "open_directory", "independent_researcher", "mirror_index", "repository_search"}
         if v not in allowed:
             raise ValueError(f"source_category moet een van {allowed} zijn, niet: {v}")
         return v

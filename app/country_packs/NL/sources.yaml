@@ -1,163 +1,177 @@
 country_code: NL
 status: active
 sources:
-  - id: nl_ddosecrets_mirror
+  - id: nl_ddosecrets_raw
     name: Distributed Denial of Secrets
     type: html
-    source_role: mirror
-    source_category: leak_archive
+    source_layer: primary_raw
+    source_category: raw_leak_archive
     discovery_priority: primary
     can_create_primary_claim: true
+    can_create_artifact_discovery: true
+    can_create_reference_observation: false
     base_url: https://ddosecrets.com
     poll_url: https://ddosecrets.com/wiki/Special:AllPages
     languages:
       - en
-    content_modes:
-      - links
-      - documents
-    access_method: html
     connector_config:
       item_selector: ul.mw-allpages-chunk a
       max_items: 100
-    validation_notes: "Distributed Denial of Secrets - public leak archive mirror. All pages index contains document links. Last validated: 2026-07-28"
-    validated_at: "2026-07-28"
-    expected_content_types:
-      - documents
-      - archives
     enabled: true
     poll_interval_minutes: 60
 
-  - id: nl_wikileaks_mirror
-    name: WikiLeaks - Recent Leaks
+  - id: nl_cryptome_archive
+    name: Cryptome Document Archive
     type: html
-    source_role: distribution
-    source_category: leak_archive
+    source_layer: primary_raw
+    source_category: raw_leak_archive
     discovery_priority: primary
     can_create_primary_claim: true
-    base_url: https://wikileaks.org
-    poll_url: https://wikileaks.org/-Leaks-.html
+    can_create_artifact_discovery: true
+    can_create_reference_observation: false
+    base_url: https://cryptome.org
+    poll_url: https://cryptome.org/
     languages:
       - en
-    content_modes:
-      - links
-    access_method: html
     connector_config:
-      item_selector: div#leaks ul li a[href]
-      max_items: 100
-    validation_notes: "WikiLeaks public leaks listing page. List of published leak dossiers with links to source documents."
-    validated_at: "2026-07-28"
-    expected_content_types:
-      - documents
+      item_selector: body a[href]
+      max_items: 200
     enabled: true
     poll_interval_minutes: 60
 
-  - id: nl_github_eu_data
-    name: GitHub EU-related public repositories
+  - id: nl_github_public_search
+    name: GitHub EU Leak Repositories
     type: html
-    source_role: signal
+    source_layer: primary_raw
     source_category: git_host
     discovery_priority: primary
     can_create_primary_claim: true
+    can_create_artifact_discovery: true
+    can_create_reference_observation: false
     base_url: https://github.com
-    poll_url: https://github.com/search?o=desc&q=netherlands+leak+OR+dataleak+OR+eu+classified+OR+european+commission+leak&s=updated&type=repositories
+    poll_url: https://github.com/search?o=desc&q=european+OR+netherlands+OR+commission+OR+eu+AND+leak+OR+classified+OR+confidential+OR+classified+documents&s=updated&type=repositories
     languages:
       - en
-    content_modes:
-      - links
-      - metadata
-    access_method: html
     connector_config:
       item_selector: div.d-flex h3 a
       max_items: 100
-    validation_notes: "GitHub search for EU/Netherlands related leak repositories. Constantly updated list of public repos."
-    validated_at: "2026-07-28"
-    expected_content_types:
-      - repositories
-      - code
+    enabled: true
+    poll_interval_minutes: 30
+
+  - id: nl_archive_org_eu_data
+    name: Archive.org - EU Document Collections
+    type: html
+    source_layer: primary_raw
+    source_category: user_upload_archive
+    discovery_priority: primary
+    can_create_primary_claim: true
+    can_create_artifact_discovery: true
+    can_create_reference_observation: false
+    base_url: https://archive.org
+    poll_url: https://archive.org/search?query=Netherlands+AND+leak&sort=-publicdate
+    languages:
+      - en
+    connector_config:
+      item_selector: div.item-ttl a
+      max_items: 100
+    enabled: true
+    poll_interval_minutes: 60
+
+  - id: nl_pastebin_search
+    name: Pastebin Public Archive Search
+    type: html
+    source_layer: primary_raw
+    source_category: paste_site
+    discovery_priority: primary
+    can_create_primary_claim: true
+    can_create_artifact_discovery: true
+    can_create_reference_observation: false
+    base_url: https://pastebin.com
+    poll_url: https://pastebin.com/archive
+    languages:
+      - en
+    connector_config:
+      item_selector: div#menu_2 li a
+      max_items: 100
     enabled: true
     poll_interval_minutes: 30
 
   - id: nl_bbc_cyber_rss
     name: BBC Technology/Cybersecurity
     type: rss
-    source_role: confirmation
+    source_layer: reference_only
     source_category: mainstream_media
     discovery_priority: low
     can_create_primary_claim: false
+    can_create_artifact_discovery: false
+    can_create_reference_observation: true
     base_url: https://www.bbc.com
     poll_url: https://feeds.bbci.co.uk/news/technology/rss.xml
     languages:
       - en
-    content_modes:
-      - metadata
-    access_method: rss
     enabled: true
     poll_interval_minutes: 30
 
   - id: nl_nrc_rss
     name: NRC Handelsblad
     type: rss
-    source_role: confirmation
+    source_layer: reference_only
     source_category: mainstream_media
     discovery_priority: low
     can_create_primary_claim: false
+    can_create_artifact_discovery: false
+    can_create_reference_observation: true
     base_url: https://www.nrc.nl
     poll_url: https://www.nrc.nl/rss/
     languages:
       - nl
-    content_modes:
-      - metadata
-    access_method: rss
     enabled: true
     poll_interval_minutes: 15
 
   - id: nl_ad_rss
     name: AD
     type: rss
-    source_role: confirmation
+    source_layer: reference_only
     source_category: mainstream_media
     discovery_priority: low
     can_create_primary_claim: false
+    can_create_artifact_discovery: false
+    can_create_reference_observation: true
     base_url: https://www.ad.nl
     poll_url: https://www.ad.nl/rss.xml
     languages:
       - nl
-    content_modes:
-      - metadata
-    access_method: rss
     enabled: true
     poll_interval_minutes: 15
 
   - id: nl_volkskrant_rss
     name: de Volkskrant
     type: rss
-    source_role: confirmation
+    source_layer: reference_only
     source_category: mainstream_media
     discovery_priority: low
     can_create_primary_claim: false
+    can_create_artifact_discovery: false
+    can_create_reference_observation: true
     base_url: https://www.volkskrant.nl
     poll_url: https://www.volkskrant.nl/nieuws/rss.xml
     languages:
       - nl
-    content_modes:
-      - metadata
-    access_method: rss
     enabled: true
     poll_interval_minutes: 30
 
   - id: nl_rtlnieuws_rss
     name: RTL Nieuws
     type: rss
-    source_role: confirmation
+    source_layer: reference_only
     source_category: mainstream_media
     discovery_priority: low
     can_create_primary_claim: false
+    can_create_artifact_discovery: false
+    can_create_reference_observation: true
     base_url: https://www.rtlnieuws.nl
     poll_url: https://www.rtlnieuws.nl/rss.xml
     languages:
       - nl
-    content_modes:
-      - metadata
-    access_method: rss
     enabled: true
     poll_interval_minutes: 15
