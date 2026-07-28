@@ -13,6 +13,9 @@ from app.repositories.source_runs import SourceRunRepository
 from app.repositories.sources import SourceRepository
 from app.services.claim_registration import register_observed_leak_claim
 from app.services.leak_signal_detection import detect_leak_signal
+from app.services.artifact_indicator_extraction import extract_artifacts
+from app.services.source_signal import create_source_signal
+from app.services.artifact_indicator_extraction import extract_artifacts, extract_file_names
 
 
 class SourceRunResult:
@@ -26,6 +29,7 @@ class SourceRunResult:
         self.items_matched: int = 0
         self.claims_created: int = 0
         self.claims_deduplicated: int = 0
+        self.signals_created: int = 0
         self.error: str | None = None
 
 
@@ -72,9 +76,7 @@ async def run_source(source_id: UUID, db: AsyncSession) -> SourceRunResult:
             source.last_error = str(conn_result.error)[:1000]
             source.consecutive_failures = (source.consecutive_failures or 0) + 1
             await repo.update_source_status(
-                source,
-                last_error_at=source.last_error_at,
-                last_error=source.last_error,
+                source, last_error_at=source.last_error_at, last_error=source.last_error,
                 consecutive_failures=source.consecutive_failures,
             )
             run_record.completed_at = datetime.now(timezone.utc)
@@ -91,11 +93,27 @@ async def run_source(source_id: UUID, db: AsyncSession) -> SourceRunResult:
 
         result.items_seen = len(conn_result.items)
         run_record.items_seen = result.items_seen
+        can_create = source.can_create_primary_claim
+        role = source.source_role
+        cat = source.source_category
 
         for item in conn_result.items:
             signal = detect_leak_signal(item.title, item.content, terms)
-            if signal.matched:
-                result.items_matched += 1
+            if not signal.matched:
+                continue
+            result.items_matched += 1
+            artifacts = extract_artifacts(item.content or "")
+            artifacts2 = extract_artifacts(item.title or "")
+            all_urls = list(set(artifacts.urls + artifacts2.urls))
+            all_repo_urls = list(set(artifacts.repository_urls + artifacts2.repository_urls))
+            all_dl_urls = list(set(artifacts.download_urls + artifacts2.download_urls))
+            all_hashes = list(set(artifacts.sha256_hashes + artifacts.sha1_hashes + artifacts.md5_hashes))
+            all_magnets = list(set(artifacts.magnet_links + artifacts2.magnet_links))
+            all_cids = list(set(artifacts.ipfs_cids + artifacts2.ipfs_cids))
+            all_files = list(set(extract_file_names(item.content) + extract_file_names(item.title)))
+            has_origin = bool(all_urls or all_repo_urls or all_dl_urls or all_hashes or all_magnets or all_cids or all_files)
+
+            if can_create:
                 try:
                     reg_result = await register_observed_leak_claim(
                         session=db,
@@ -105,14 +123,13 @@ async def run_source(source_id: UUID, db: AsyncSession) -> SourceRunResult:
                         summary=item.content_excerpt,
                         claim_text=item.content,
                         countries=[source.country_code],
-                        dossiers=[],
                         discovery_method="connector",
                         connector_type=source.source_type,
                         connector_version="0.1.0",
                         content_excerpt=item.content_excerpt,
                         observed_at=item.observed_at,
                         source_id=source.id,
-                        raw_metadata=item.raw_metadata,
+                        raw_metadata={**item.raw_metadata, "source_role": role, "source_category": cat},
                     )
                     if reg_result.is_new:
                         result.claims_created += 1
@@ -120,15 +137,55 @@ async def run_source(source_id: UUID, db: AsyncSession) -> SourceRunResult:
                         result.claims_deduplicated += 1
                 except Exception:
                     continue
+            else:
+                if has_origin:
+                    try:
+                        reg_result = await register_observed_leak_claim(
+                            session=db,
+                            title_original=item.title or "Untitled",
+                            first_observed_url=item.url,
+                            source_language=item.language or source.country_code.lower(),
+                            summary=item.content_excerpt,
+                            claim_text=item.content,
+                            countries=[source.country_code],
+                            discovery_method="connector",
+                            connector_type=source.source_type,
+                            connector_version="0.1.0",
+                            content_excerpt=item.content_excerpt,
+                            observed_at=item.observed_at,
+                            source_id=source.id,
+                            raw_metadata={**item.raw_metadata, "source_role": role, "source_category": cat},
+                        )
+                        if reg_result.is_new:
+                            result.claims_created += 1
+                        else:
+                            result.claims_deduplicated += 1
+                    except Exception:
+                        continue
+                else:
+                    try:
+                        await create_source_signal(
+                            session=db,
+                            source_id=source.id,
+                            title=item.title,
+                            url=item.url,
+                            content_excerpt=item.content_excerpt,
+                            source_role=role,
+                            source_category=cat,
+                            matched_terms=signal.matched_terms,
+                            extracted_urls=all_urls + all_repo_urls + all_dl_urls,
+                            extracted_hashes=all_hashes,
+                            extracted_magnet_links=all_magnets,
+                            extracted_ipfs_cids=all_cids,
+                            extracted_file_names=all_files,
+                        )
+                        result.signals_created += 1
+                    except Exception:
+                        continue
 
         source.last_success_at = datetime.now(timezone.utc)
         source.consecutive_failures = 0
-        await repo.update_source_status(
-            source,
-            last_success_at=source.last_success_at,
-            consecutive_failures=0,
-        )
-
+        await repo.update_source_status(source, last_success_at=source.last_success_at, consecutive_failures=0)
         result.success = True
         run_record.success = True
         run_record.items_matched = result.items_matched
@@ -140,12 +197,7 @@ async def run_source(source_id: UUID, db: AsyncSession) -> SourceRunResult:
         source.last_error_at = datetime.now(timezone.utc)
         source.last_error = str(e)[:1000]
         source.consecutive_failures = (source.consecutive_failures or 0) + 1
-        await repo.update_source_status(
-            source,
-            last_error_at=source.last_error_at,
-            last_error=source.last_error,
-            consecutive_failures=source.consecutive_failures,
-        )
+        await repo.update_source_status(source, last_error_at=source.last_error_at, last_error=source.last_error, consecutive_failures=source.consecutive_failures)
         run_record.error = str(e)[:1000]
         run_record.success = False
 
@@ -169,7 +221,6 @@ async def run_enabled_sources(
     sources = await db.execute(stmt)
     all_sources = list(sources.scalars().all())
     batch.total_sources = len(all_sources)
-
     for source in all_sources:
         try:
             sr = await run_source(source.id, db)
@@ -180,5 +231,4 @@ async def run_enabled_sources(
                 batch.failed += 1
         except Exception:
             batch.failed += 1
-
     return batch

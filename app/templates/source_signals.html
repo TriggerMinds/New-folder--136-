@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Signal Feed</h1>
+<p class="subtitle">Niet-primaire signalen die nog geen observed_leak_claim hebben — alleen confirmation, official_response en signal zonder concrete origin</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Datum</th>
+            <th>Titel</th>
+            <th>Bron</th>
+            <th>Rol</th>
+            <th>Categorie</th>
+            <th>Status</th>
+            <th>URLs</th>
+            <th>Hashes</th>
+            <th>Bestanden</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for s in signals %}
+        <tr>
+            <td>{{ s.observed_at }}</td>
+            <td><a href="{{ s.url }}" target="_blank">{{ s.title or '—' | truncate(40) }}</a></td>
+            <td>{{ s.source_id | string | truncate(8) }}</td>
+            <td>{{ s.source_role }}</td>
+            <td>{{ s.source_category }}</td>
+            <td><span class="tag">{{ s.processing_status }}</span></td>
+            <td>{{ s.extracted_urls | length }}</td>
+            <td>{{ s.extracted_hashes | length }}</td>
+            <td>{{ s.extracted_file_names | length }}</td>
+        </tr>
+    {% else %}
+        <tr><td colspan="9">Geen signalen gevonden.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

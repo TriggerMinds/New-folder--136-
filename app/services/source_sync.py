@@ -31,25 +31,35 @@ async def sync_country_packs_to_database(session: AsyncSession) -> SourceSyncRes
             continue
         for src_def in pack.sources.sources:
             synced_external_ids.add(src_def.id)
-            connector_config = {
-                "base_url": src_def.base_url,
-                "poll_url": src_def.poll_url,
-                "languages": src_def.languages,
-            }
+            connector_config = dict(src_def.connector_config) if src_def.connector_config else {}
+            connector_config["base_url"] = src_def.base_url
+            connector_config["poll_url"] = src_def.poll_url
+            connector_config["languages"] = src_def.languages
             existing_src = existing_sources.get(src_def.id)
             if existing_src:
+                cc_str = str(connector_config)
+                existing_cc_str = str(existing_src.connector_config)
                 needs_update = (
                     existing_src.name != src_def.name
                     or existing_src.country_code != pack.country_code
                     or existing_src.source_type != src_def.type
+                    or existing_src.source_role != src_def.source_role
+                    or existing_src.source_category != src_def.source_category
+                    or existing_src.can_create_primary_claim != src_def.can_create_primary_claim
+                    or existing_src.discovery_priority != src_def.discovery_priority
                     or existing_src.base_url != src_def.base_url
                     or existing_src.poll_url != src_def.poll_url
                     or existing_src.poll_interval_minutes != src_def.poll_interval_minutes
+                    or cc_str != existing_cc_str
                 )
                 if needs_update:
                     existing_src.name = src_def.name
                     existing_src.country_code = pack.country_code
                     existing_src.source_type = src_def.type
+                    existing_src.source_role = src_def.source_role
+                    existing_src.source_category = src_def.source_category
+                    existing_src.can_create_primary_claim = src_def.can_create_primary_claim
+                    existing_src.discovery_priority = src_def.discovery_priority
                     existing_src.base_url = src_def.base_url
                     existing_src.poll_url = src_def.poll_url
                     existing_src.languages = src_def.languages
@@ -67,6 +77,10 @@ async def sync_country_packs_to_database(session: AsyncSession) -> SourceSyncRes
                     country_code=pack.country_code,
                     languages=src_def.languages,
                     source_type=src_def.type,
+                    source_role=src_def.source_role,
+                    source_category=src_def.source_category,
+                    can_create_primary_claim=src_def.can_create_primary_claim,
+                    discovery_priority=src_def.discovery_priority,
                     base_url=src_def.base_url,
                     poll_url=src_def.poll_url,
                     enabled=src_def.enabled,

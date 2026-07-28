@@ -3,6 +3,7 @@ from app.database.models.observation import Observation
 from app.database.models.source import Source
 from app.database.models.audit_event import AuditEvent
 from app.database.models.source_run import SourceRun
+from app.database.models.source_signal import SourceSignal
 
 __all__ = [
     "ObservedLeakClaim",
@@ -14,4 +15,5 @@ __all__ = [
     "Source",
     "AuditEvent",
     "SourceRun",
+    "SourceSignal",
 ]

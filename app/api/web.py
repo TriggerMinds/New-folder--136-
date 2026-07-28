@@ -16,6 +16,8 @@ from app.schemas.sources import SourceResponse
 from app.schemas.source_runs import SourceRunResponse
 from app.services.source_runner import run_source, run_enabled_sources
 from app.services.source_sync import sync_country_packs_to_database
+from app.repositories.source_signals import SourceSignalRepository
+from app.schemas.source_signals import SourceSignalResponse
 
 router = APIRouter(tags=["web"])
 
@@ -147,3 +149,17 @@ async def source_runs_page(
     items = [SourceRunResponse.model_validate(r) for r in runs]
     templates = request.app.state.templates
     return templates.TemplateResponse(request, "source_runs.html", {"runs": items})
+
+
+@router.get("/source-signals", response_class=HTMLResponse)
+async def source_signals_page(
+    request: Request,
+    limit: int = Query(default=200, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
+    db: AsyncSession = Depends(get_db),
+):
+    repo = SourceSignalRepository(db)
+    signals = await repo.list_signals(limit=limit, offset=offset)
+    items = [SourceSignalResponse.model_validate(s) for s in signals]
+    templates = request.app.state.templates
+    return templates.TemplateResponse(request, "source_signals.html", {"signals": items})

@@ -94,17 +94,48 @@ class SourceDef(BaseModel):
     id: str = Field(..., min_length=1, pattern=r"^[a-z][a-z0-9_]*$")
     name: str = Field(..., min_length=1)
     type: str = Field(...)
+    source_role: str = Field(default="signal")
+    source_category: str = Field(default="specialist_blog")
+    discovery_priority: str = Field(default="secondary")
+    can_create_primary_claim: bool = True
     base_url: str = Field(...)
     poll_url: str = Field(...)
     languages: list[str] = Field(default_factory=list)
+    content_modes: list[str] = Field(default_factory=list)
+    access_method: str = Field(default="")
+    connector_config: dict = Field(default_factory=dict)
     enabled: bool = True
     poll_interval_minutes: int = Field(default=30, ge=5)
 
     @field_validator("type")
     @classmethod
     def valid_type(cls, v: str) -> str:
-        if v not in ("rss", "html"):
-            raise ValueError(f"Type moet 'rss' of 'html' zijn, niet: {v}")
+        allowed = {"rss", "html", "archive", "git_host", "web_archive", "public_channel"}
+        if v not in allowed:
+            raise ValueError(f"Type moet een van {allowed} zijn, niet: {v}")
+        return v
+
+    @field_validator("source_role")
+    @classmethod
+    def valid_role(cls, v: str) -> str:
+        allowed = {"origin_candidate", "distribution", "archive", "mirror", "signal", "confirmation", "official_response"}
+        if v not in allowed:
+            raise ValueError(f"source_role moet een van {allowed} zijn, niet: {v}")
+        return v
+
+    @field_validator("source_category")
+    @classmethod
+    def valid_category(cls, v: str) -> str:
+        allowed = {"leak_archive", "document_archive", "dataset_index", "git_host", "file_host", "torrent_index", "ipfs_index", "public_channel", "paste_site", "web_archive", "whistleblower_platform", "specialist_blog", "mainstream_media", "government", "parliament"}
+        if v not in allowed:
+            raise ValueError(f"source_category moet een van {allowed} zijn, niet: {v}")
+        return v
+
+    @field_validator("discovery_priority")
+    @classmethod
+    def valid_priority(cls, v: str) -> str:
+        if v not in ("primary", "secondary", "low"):
+            raise ValueError(f"discovery_priority moet primary/secondary/low zijn, niet: {v}")
         return v
 
     @field_validator("base_url", "poll_url")
