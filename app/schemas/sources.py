@@ -37,19 +37,29 @@ class SourceResponse(BaseModel):
     country_code: str
     languages: list
     source_type: str
+    source_layer: str = "reference_only"
+    source_role: str = "signal"
+    source_category: str = "specialist_blog"
+    discovery_priority: str = "secondary"
+    can_create_primary_claim: bool = True
+    can_create_artifact_discovery: bool = False
+    can_create_reference_observation: bool = True
+    lifecycle_status: str = "active"
+    present_in_country_pack: bool = True
+    disabled_reason: str | None = None
     base_url: str
     poll_url: str
-    connector_config: dict
-    country_pack_version: str | None
-    enabled: bool
-    poll_interval_minutes: int
-    last_checked_at: datetime | None
-    last_success_at: datetime | None
-    last_error_at: datetime | None
-    last_error: str | None
-    consecutive_failures: int
-    created_at: datetime
-    updated_at: datetime
+    connector_config: dict = Field(default_factory=dict)
+    country_pack_version: str | None = None
+    enabled: bool = True
+    poll_interval_minutes: int = 30
+    last_checked_at: datetime | None = None
+    last_success_at: datetime | None = None
+    last_error_at: datetime | None = None
+    last_error: str | None = None
+    consecutive_failures: int = 0
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 

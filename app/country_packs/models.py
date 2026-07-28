@@ -142,7 +142,7 @@ class SourceDef(BaseModel):
     @field_validator("type")
     @classmethod
     def valid_type(cls, v: str) -> str:
-        allowed = {"rss", "html", "archive", "git_host", "web_archive", "public_channel", "raw_archive", "github_api", "internet_archive_api"}
+        allowed = {"rss", "html", "archive", "git_host", "web_archive", "public_channel", "raw_archive", "github_api", "internet_archive_api", "documentcloud_api"}
         if v not in allowed:
             raise ValueError(f"Type moet een van {allowed} zijn, niet: {v}")
         return v

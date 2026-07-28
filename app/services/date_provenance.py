@@ -54,6 +54,22 @@ def map_internet_archive(entry: dict) -> DateProvenanceResult:
     return result
 
 
+def map_documentcloud_document(doc: dict) -> DateProvenanceResult:
+    created = _parse_iso(doc.get("created_at"))
+    updated = _parse_iso(doc.get("updated_at"))
+    publish = _parse_iso(doc.get("publish_at"))
+    return DateProvenanceResult(
+        source_created_at=created,
+        source_modified_at=updated,
+        published_at=publish,
+        precision="exact_datetime",
+        confidence="authoritative",
+        method="source_api",
+        raw_value=doc.get("created_at", ""),
+        evidence="DocumentCloud API created_at/publish_at/updated_at",
+    )
+
+
 def _parse_iso(value: str | None) -> datetime | None:
     if not value:
         return None

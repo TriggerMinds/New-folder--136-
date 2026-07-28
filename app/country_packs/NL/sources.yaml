@@ -68,3 +68,29 @@ sources:
         - subject:(EU) AND (leak OR breach OR dump OR classified OR documents OR data)
     enabled: true
     poll_interval_minutes: 60
+
+  - id: nl_documentcloud_api
+    name: DocumentCloud - EU Primary Documents
+    type: documentcloud_api
+    source_layer: primary_raw
+    source_category: document_archive
+    discovery_priority: primary
+    can_create_primary_claim: false
+    can_create_artifact_discovery: true
+    can_create_reference_observation: false
+    base_url: https://www.documentcloud.org
+    poll_url: https://api.www.documentcloud.org/api/documents/search/
+    languages:
+      - en
+    connector_config:
+      max_items: 100
+      max_pages: 2
+      per_page: 25
+      search_queries:
+        - Netherlands confidential documents
+        - European Commission documents
+        - EU confidential report
+        - leaked memo government
+        - public records Netherlands
+    enabled: true
+    poll_interval_minutes: 60

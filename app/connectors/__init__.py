@@ -8,3 +8,4 @@ import app.connectors.public_channel
 import app.connectors.raw_archive
 import app.connectors.github_api
 import app.connectors.internet_archive_api
+import app.connectors.documentcloud_api
